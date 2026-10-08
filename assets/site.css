@@ -206,3 +206,9 @@ main { overflow-wrap: anywhere; }
   .sel-label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 2px; }
   .skillrow .change::before { content: "Change: "; font-weight: 400; color: var(--muted); }
 }
+
+/* programme progress bar: the first thing on My profile */
+.programme { border-color: var(--brand); border-width: 2px; margin-top: 4px; }
+.programme .big { font-size: 2rem; margin-bottom: 10px; }
+.programme .bar { height: 22px; }
+.programme .muted { margin: 10px 0 0; }

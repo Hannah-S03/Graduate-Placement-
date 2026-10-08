@@ -5,9 +5,12 @@
 
   R.profile = function (t) {
     var status = Hub.status();
+    var top = el("div");
     var body = el("div");
     var editing = false;
+    var cfg = window.SITE_CONFIG || {};
     Hub.notices(t);
+    t.appendChild(top);
     t.appendChild(status);
     t.appendChild(body);
 
@@ -18,14 +21,16 @@
           { name: "name", label: "Your name", required: true, autocomplete: "name", maxlength: 120 },
           { name: "role", label: "Your role or area", hint: "For example: Graduate, central team.", maxlength: 200 },
           { name: "startDate", label: "Placement start date", type: "date", required: true, hint: "Used to work out your week number and training due dates." },
+          { name: "endDate", label: "Placement end date", type: "date", hint: "Leave empty to use 12 weeks from your start date." },
           { name: "manager", label: "Your manager", maxlength: 120 },
           { name: "mentor", label: "Your mentor", maxlength: 120 },
           { name: "interests", label: "Career interests", type: "textarea", hint: "What would you like to learn or become? Only you can see this." }
         ],
-        values: p,
+        values: first ? Object.assign({}, p, { startDate: p.startDate || cfg.programmeStart || "", endDate: p.endDate || cfg.programmeEnd || "" }) : p,
         submitLabel: first ? "Set up my hub" : "Save profile",
         onCancel: first ? null : function () { editing = false; render(); },
         onSubmit: function (v) {
+          if (v.endDate && v.endDate < v.startDate) return { endDate: "The end date must be after the start date." };
           Object.keys(v).forEach(function (k) { S.state.profile[k] = v[k]; });
           editing = false;
           Hub.save(status, first ? "Your hub is ready." : "Profile saved.");
@@ -42,23 +47,21 @@
       body.appendChild(card);
     }
 
-    function placementPanel() {
-      var pl = S.placement(S.state.profile.startDate);
-      var sec = Hub.panel("Your placement");
+    // The progress bar shown first on the page. Uses the graduate's own dates, or the programme dates from config.
+    function programmePanel() {
+      var pl = S.programme();
+      var sec = Hub.panel("Programme progress", "programme");
       if (pl.status === "none") { sec.appendChild(Hub.needStart()); return sec; }
+      var dates = Hub.fmtDate(pl.startDate) + " to " + Hub.fmtDate(pl.endDate);
       if (pl.status === "before") {
         sec.appendChild(el("p", { class: "big", text: "Starts in " + Hub.plural(pl.startsIn, "day", "days") }));
-        sec.appendChild(el("p", { text: "Your placement starts on " + Hub.fmtDate(S.state.profile.startDate) + "." }));
-        sec.appendChild(Hub.progress(0, "Placement progress"));
       } else if (pl.status === "during") {
-        sec.appendChild(el("p", { class: "big", text: "Week " + pl.week + " of " + pl.totalWeeks }));
-        sec.appendChild(el("p", { text: "Started " + Hub.fmtDate(S.state.profile.startDate) + ". Ends " + Hub.fmtDate(pl.endDate) + "." }));
-        sec.appendChild(Hub.progress(pl.pct, "Placement progress"));
+        sec.appendChild(el("p", { class: "big", text: "Week " + pl.week + " of " + pl.totalWeeks + " \u00B7 " + pl.pct + "% through" }));
       } else {
-        sec.appendChild(el("p", { class: "big", text: "Placement complete" }));
-        sec.appendChild(el("p", { text: "You finished all " + pl.totalWeeks + " weeks on " + Hub.fmtDate(pl.endDate) + ". Well done!" }));
-        sec.appendChild(Hub.progress(100, "Placement progress"));
+        sec.appendChild(el("p", { class: "big", text: "Programme complete \u00B7 100%" }));
       }
+      sec.appendChild(Hub.progress(pl.pct, "Programme progress"));
+      sec.appendChild(el("p", { class: "muted", text: dates + (pl.status === "after" ? ". Well done!" : "") + (pl.own ? "" : " (programme dates; you can enter your own dates in your profile)") }));
       return sec;
     }
 
@@ -209,7 +212,6 @@
       edit.addEventListener("click", function () { editing = true; render(); });
       card.appendChild(edit);
       body.appendChild(card);
-      body.appendChild(placementPanel());
       body.appendChild(progressPanel());
       body.appendChild(remindersPanel());
       var two = el("div", { class: "grid two" });
@@ -220,6 +222,8 @@
     }
 
     function render() {
+      top.textContent = "";
+      top.appendChild(programmePanel());
       body.textContent = "";
       if (!S.state.profile.name) setup();
       else if (editing) {

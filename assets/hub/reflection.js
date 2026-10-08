@@ -6,8 +6,8 @@
   R.reflection = function (t) {
     var status = Hub.status();
     var summary = el("div"), grid = el("div"), formHost = el("div"), listHost = el("div");
-    var total = (window.SITE_CONFIG && window.SITE_CONFIG.placementWeeks) || 12;
-    var pl = S.placement(S.state.profile.startDate, total);
+    var pl = S.programme();
+    var total = pl.totalWeeks;
     var selected = pl.status === "during" ? pl.week : (function () {
       for (var i = 1; i <= total; i++) if (!S.state.reflections[String(i)]) return i;
       return 1;

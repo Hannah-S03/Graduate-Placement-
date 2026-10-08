@@ -9,7 +9,8 @@
     var p = S.state.profile;
     t.appendChild(el("h3", { text: "Your placement at a glance" }));
     var items = P.atAGlance.slice();
-    items.push({ label: "Your start date", value: p.startDate ? Hub.fmtDate(p.startDate) : "Add it on My profile" });
+    var pr = S.programme();
+    items.push({ label: "Programme dates", value: pr.status === "none" ? "To be confirmed" : Hub.fmtDate(pr.startDate) + " to " + Hub.fmtDate(pr.endDate) });
     if (p.manager) items.push({ label: "Your manager", value: p.manager });
     if (p.mentor) items.push({ label: "Your mentor", value: p.mentor });
     var ul = el("ul", { class: "tiles" });

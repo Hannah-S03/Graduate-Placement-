@@ -48,11 +48,12 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | `assets/site.js` | Menu, footer and the company, objectives, skills and FAQ sections |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
 | `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
-| `src/config.js` | Names, placement length, contact email, dummy-data banner switch |
+| `src/config.js` | Names, programme start and end dates, contact email, dummy-data banner switch |
 | `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 
 ## Replacing the dummy content
 
+0. **Programme dates:** set `programmeStart` and `programmeEnd` in `src/config.js` (format `2026-09-01`). They drive the progress bar at the top of My profile and prefill each graduate's dates. The bar shows the current week out of the total weeks, so week 6 of 12 is 50%.
 1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date).
 2. Edit `src/config.js`: company name, contact email, placement length.
 3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.

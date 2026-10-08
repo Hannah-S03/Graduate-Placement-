@@ -263,7 +263,7 @@
   // Things that need attention, most urgent first.
   Hub.reminders = function () {
     var st = S.state, out = [], today = S.today();
-    var pl = S.placement(st.profile.startDate);
+    var pl = S.programme();
     Hub.training().forEach(function (t) {
       if (Hub.trainingStatus(t) === "complete") return;
       var due = Hub.trainingDue(t); if (!due) return;

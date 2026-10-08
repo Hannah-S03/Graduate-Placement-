@@ -64,9 +64,9 @@ Priority: **P0** required, **P1** should have, **P2** nice to have.
 ### 5.1 My profile (home) `index.html`
 | ID | Requirement | Priority |
 |---|---|---|
-| H1 | First visit shows a short setup form (name, role or area, placement start date, manager, mentor, career interests); name and start date required | P0 |
+| H1 | First visit shows a short setup form (name, role or area, placement start and end dates, manager, mentor, career interests); name and start date required; the dates are **prefilled with the programme dates** from `src/config.js` | P0 |
 | H2 | Profile card with initials avatar and an edit option | P0 |
-| H3 | Placement panel: **Week X of 12** with a progress bar; "Starts in N days" before the start; "Placement complete" after week 12 | P0 |
+| H3 | **Programme progress bar as the first thing on the page** (directly under the heading, visible before any setup): "Week 6 of 12 · 50% through", with the start and end dates; "Starts in N days" before the start; "Programme complete · 100%" after the end. It uses the graduate's own dates once entered, otherwise the programme dates (1 Sept to 20 Nov 2026) | P0 |
 | H4 | **Overall progress tracker** with separate bars for goals, milestones and required training, and an explanation of how it is worked out (section 6) | P0 |
 | H5 | **Reminders**: overdue or due-soon training, goals and milestones nearly due, planned learning in the next 7 days, and this week's reflection | P0 |
 | H6 | Pinned links, next goals and latest achievements | P1 |
@@ -129,7 +129,11 @@ Priority: **P0** required, **P1** should have, **P2** nice to have.
 ### 5.9 Help, privacy, accessibility
 Help has graduate FAQs and the programme contact. The privacy notice (draft) explains browser-only storage. The accessibility statement (draft) commits to WCAG 2.2 AA.
 
-## 6. How "overall progress" is worked out
+## 6. How progress is worked out
+
+**Programme progress bar (top of My profile):** the share of the programme's weeks reached, that is the **current week divided by the total weeks**. Week 6 of 12 is 50%. The week number counts from the start date (days 1 to 7 are week 1) and the total is the number of weeks between the start and end dates, with a part week counting as a week. The programme dates (1 Sept to 20 Nov 2026) give 12 weeks. If a graduate enters a start date but no end date, 12 weeks is assumed. The bar moves in weekly steps; it is 0% before the start and 100% from the last week onwards.
+
+**Overall progress (the tracker below it):**
 
 Overall progress is the **average of the parts that have something in them**: goals progress (average % across all goals), milestones (share achieved) and required training (share complete). A part with nothing yet is left out of the average. Each part is also shown on its own bar. The placement timeline (week X of 12) is shown separately.
 
@@ -170,7 +174,7 @@ Static site: plain HTML, CSS and JavaScript, no build step or server.
 | `assets/site.css`, `assets/site.js` | Styles; menu, footer and the shared company, objectives, skills and FAQ renderers |
 | `assets/store.js` | The storage module: load, save, validate, back up, restore, reset, date and week helpers |
 | `assets/hub/*.js` | `common.js` (forms, progress, reminders) and one script per section |
-| `src/config.js` | Names, placement length, contact email, dummy-data banner switch |
+| `src/config.js` | Names, programme start and end dates (the progress bar), contact email, dummy-data banner switch |
 | `src/data/*.js` | Content: company, team, feedback, overview, content, placement, links, learning, networks |
 
 **Run locally:** `python -m http.server 8000` in the project folder (Windows) or `python3 ...` (Mac/Linux), then open `http://localhost:8000`. See `README.md`. **Public hosting later:** deploy the same files to a static host with HTTPS (and an access restriction if it should be internal only).

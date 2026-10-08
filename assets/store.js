@@ -41,15 +41,32 @@
     return Math.round((Date.UTC(y.getFullYear(), y.getMonth(), y.getDate()) - Date.UTC(x.getFullYear(), x.getMonth(), x.getDate())) / 86400000);
   }
 
-  // Where the graduate is in the placement. totalWeeks defaults to the config value (12).
-  function placement(startDate, totalWeeks) {
-    totalWeeks = totalWeeks || (window.SITE_CONFIG && window.SITE_CONFIG.placementWeeks) || 12;
-    if (!startDate) return { status: "none", totalWeeks: totalWeeks };
-    var totalDays = totalWeeks * 7, daysIn = daysBetween(startDate, today());
-    var endDate = addDays(startDate, totalDays - 1);
-    if (daysIn < 0) return { status: "before", startsIn: -daysIn, totalWeeks: totalWeeks, totalDays: totalDays, endDate: endDate, daysIn: daysIn };
-    if (daysIn >= totalDays) return { status: "after", totalWeeks: totalWeeks, totalDays: totalDays, endDate: endDate, daysIn: daysIn, week: totalWeeks, pct: 100 };
-    return { status: "during", week: Math.floor(daysIn / 7) + 1, totalWeeks: totalWeeks, totalDays: totalDays, endDate: endDate, daysIn: daysIn, pct: Math.round((daysIn / totalDays) * 100) };
+  // Where the graduate is in the programme. With an end date the length is worked out from the dates
+  // (a partial last week counts as a week); without one it is placementWeeks (12) weeks from the start.
+  // Progress (pct) is the current week out of the total weeks, for example week 6 of 12 = 50%.
+  function placement(startDate, endDate) {
+    var cfgWeeks = (window.SITE_CONFIG && window.SITE_CONFIG.placementWeeks) || 12;
+    if (!startDate) return { status: "none", totalWeeks: cfgWeeks };
+    var totalDays = cfgWeeks * 7;
+    if (endDate && daysBetween(startDate, endDate) >= 0) totalDays = daysBetween(startDate, endDate) + 1;
+    var totalWeeks = Math.ceil(totalDays / 7);
+    var daysIn = daysBetween(startDate, today());
+    var last = addDays(startDate, totalDays - 1);
+    if (daysIn < 0) return { status: "before", startsIn: -daysIn, totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, pct: 0 };
+    if (daysIn >= totalDays) return { status: "after", totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, week: totalWeeks, pct: 100 };
+    var week = Math.floor(daysIn / 7) + 1;
+    return { status: "during", week: week, totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, pct: Math.round((week / totalWeeks) * 100) };
+  }
+  // The dates in use: the graduate's own if they have entered a start date, otherwise the programme dates from config.
+  function activeDates() {
+    var p = state.profile, cfg = window.SITE_CONFIG || {};
+    if (p.startDate) return { start: p.startDate, end: p.endDate || "", own: true };
+    return { start: dateStr(cfg.programmeStart), end: dateStr(cfg.programmeEnd), own: false };
+  }
+  function programme() {
+    var d = activeDates(), pl = placement(d.start, d.end);
+    pl.startDate = d.start; pl.own = d.own;
+    return pl;
   }
 
   // Only http and https addresses are accepted. Returns the cleaned address or "".
@@ -67,7 +84,7 @@
   function emptyState() {
     return {
       version: 1,
-      profile: { name: "", role: "", manager: "", mentor: "", startDate: "", interests: "" },
+      profile: { name: "", role: "", manager: "", mentor: "", startDate: "", endDate: "", interests: "" },
       goals: [], milestones: [], skills: {},
       links: { pinned: [], custom: [] },
       learning: { saved: {}, custom: [], training: {} },
@@ -80,7 +97,7 @@
     var s = emptyState();
     if (!isObj(raw)) return s;
     var p = isObj(raw.profile) ? raw.profile : {};
-    s.profile = { name: str(p.name, 120), role: str(p.role, 200), manager: str(p.manager, 120), mentor: str(p.mentor, 120), startDate: dateStr(p.startDate), interests: str(p.interests) };
+    s.profile = { name: str(p.name, 120), role: str(p.role, 200), manager: str(p.manager, 120), mentor: str(p.mentor, 120), startDate: dateStr(p.startDate), endDate: dateStr(p.endDate), interests: str(p.interests) };
     s.goals = mapList(raw.goals, function (g) {
       return {
         id: idOf(g), type: oneOf(g.type, ["development", "career", "placement"], "development"),
@@ -182,6 +199,6 @@
     get state() { return state; },
     save: save, exportJSON: exportJSON, importJSON: importJSON, reset: reset,
     id: uid, today: today, addDays: addDays, daysBetween: daysBetween, parseDate: parseDate,
-    placement: placement, safeUrl: safeUrl, dateStr: dateStr, sanitize: sanitize, emptyState: emptyState
+    placement: placement, programme: programme, safeUrl: safeUrl, dateStr: dateStr, sanitize: sanitize, emptyState: emptyState
   };
 })();

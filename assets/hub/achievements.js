@@ -11,7 +11,7 @@
 
   // A readable text (Markdown) version of the whole scheme. Contacts are left out because they are other people's details.
   Hub.schemeRecordMarkdown = function () {
-    var st = S.state, p = st.profile, pl = S.placement(p.startDate), L = [];
+    var st = S.state, p = st.profile, pl = S.programme(), L = [];
     var cfg = window.SITE_CONFIG || {};
     L.push("# My graduate scheme record", "");
     L.push("**" + (p.name || "Graduate") + "**" + (p.role ? ", " + p.role : "") + " – " + (cfg.companyName || ""));
@@ -90,7 +90,7 @@
       recordHost.textContent = "";
       var p = S.state.profile;
       var panel = Hub.panel("Your scheme record");
-      var pl = S.placement(p.startDate);
+      var pl = S.programme();
       var st = S.state;
       var bits = [];
       if (p.name) bits.push(p.name + (p.role ? ", " + p.role : ""));
