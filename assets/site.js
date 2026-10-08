@@ -61,9 +61,6 @@
         if (n[0] === page) a.setAttribute("aria-current", "page");
         ul.appendChild(el("li", {}, [a]));
       });
-      var apply = el("a", { href: "apply.html", class: "cta", text: "Apply" });
-      if (page === "apply.html") apply.setAttribute("aria-current", "page");
-      ul.appendChild(el("li", {}, [apply]));
       nav.appendChild(ul);
       wrap.appendChild(nav);
       btn.addEventListener("click", function () {
@@ -93,7 +90,7 @@
   R.facts = function (t) {
     var items = [
       ["12 weeks", "full-time placement"],
-      ["3 teams", "rotations across the business"],
+      ["1 central team", "a range of areas to experience"],
       ["1 mentor", "with you throughout"],
       [CFG.nextStartDate || "TBC", "next start date"]
     ];
@@ -114,10 +111,16 @@
     var v = el("p");
     (COMPANY.values || []).forEach(function (x) { v.appendChild(el("span", { class: "tag", text: x })); });
     t.appendChild(v);
-    t.appendChild(el("h2", { text: "Teams graduates may work in" }));
-    var tv = el("p");
-    (COMPANY.teams || []).forEach(function (x) { tv.appendChild(el("span", { class: "tag", text: x })); });
-    t.appendChild(tv);
+    var ct = COMPANY.centralTeam;
+    if (ct) {
+      t.appendChild(el("h2", { text: ct.title || "The central team" }));
+      t.appendChild(el("p", { text: ct.intro || "" }));
+      var ag = el("div", { class: "grid" });
+      (ct.areas || []).forEach(function (a) {
+        ag.appendChild(el("article", { class: "card" }, [el("h3", { text: a.name }), el("p", { text: a.text })]));
+      });
+      t.appendChild(ag);
+    }
   };
 
   R.companySummary = function (t) {
@@ -190,8 +193,6 @@
   };
   R.dates = function (t) {
     var ul = el("ul");
-    ul.appendChild(el("li", { text: "Applications: " + (CFG.applicationsOpen ? "open" : "closed") }));
-    ul.appendChild(el("li", { text: "Closing date: " + (CFG.closingDate || "To be confirmed") }));
     ul.appendChild(el("li", { text: "Placement start date: " + (CFG.nextStartDate || "To be confirmed") }));
     t.appendChild(ul);
   };
@@ -232,29 +233,6 @@
     (CONTENT.faqs || []).forEach(function (f) {
       t.appendChild(el("details", {}, [el("summary", { text: f.q }), el("p", { text: f.a })]));
     });
-  };
-
-  R.apply = function (t) {
-    var url = CFG.googleFormUrl;
-    if (!CFG.applicationsOpen) {
-      t.appendChild(el("div", { class: "notice", role: "status" }, [
-        el("strong", { text: "Applications are closed. " }),
-        "Closing date was " + (CFG.closingDate || "not set") + ". Check back for the next intake or contact us."
-      ]));
-      return;
-    }
-    if (!url) {
-      t.appendChild(el("div", { class: "notice", role: "status" }, [
-        el("strong", { text: "The application form is not connected yet. " }),
-        "Create the Google Form using docs/application-form.md, then paste its link into src/config.js (googleFormUrl)."
-      ]));
-      return;
-    }
-    t.appendChild(el("p", {}, [
-      "Having trouble with the form below? ",
-      el("a", { href: url.replace("?embedded=true", ""), target: "_blank", rel: "noopener", text: "Open the form in a new tab" }), "."
-    ]));
-    t.appendChild(el("iframe", { class: "form-frame", src: url, title: "Graduate placement application form", loading: "lazy" }, ["Loading…"]));
   };
 
   R.contact = function (t) {

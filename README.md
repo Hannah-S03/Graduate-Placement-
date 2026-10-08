@@ -1,8 +1,8 @@
 # Graduate Placement Website
 
-A static website for a 12-week graduate placement that rotates across teams. Applications are collected with a Google Form embedded on the Apply page.
+A static, information-only website for a 12-week graduate placement where graduates work with the central team across a range of areas. The site does not take applications.
 
-Full requirements are in [`PRD.md`](PRD.md). **All company, people, quotes and week details are dummy data** (fictional company "Brightpath Technologies") until you replace them.
+Full requirements are in [`PRD.md`](PRD.md). **All company, people, quotes and skills details are dummy data** (fictional company "Brightpath Technologies") until you replace them.
 
 ## Run it on your computer (localhost)
 
@@ -22,33 +22,32 @@ Only you can see the site while it runs this way. To make it public later, uploa
 
 | Path | What it is |
 |---|---|
-| `*.html` | The pages (home, about, team, 12-week overview, apply, and so on) |
+| `*.html` | The pages (home, about, team, 12-week overview, how to apply, and so on) |
 | `assets/site.css`, `assets/site.js` | Shared styles, and the script that builds the menu, footer and page sections from the data files |
-| `src/config.js` | Site settings: applications open/closed, closing date, contact email, **Google Form link**, dummy-data banner |
+| `src/config.js` | Site settings: names, start date, contact email, dummy-data banner |
 | `src/data/overview.js` | The 12-week overview: educational and personal skills, and what each covers |
-| `src/data/company.js` | About the company |
+| `src/data/company.js` | About the company, including the central team and its areas of work |
 | `src/data/team.js` | Meet the team |
 | `src/data/feedback.js` | Previous graduate feedback |
 | `src/data/content.js` | Objectives, eligibility, criteria, process steps, FAQs |
-| `docs/application-form.md` | Question list and checklist for creating the Google Form |
 
 ## Replacing the dummy content
 
 1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets).
 2. Edit `src/config.js`: company name, contact email, dates.
-3. Create the Google Form (see `docs/application-form.md`) and paste its embed link into `googleFormUrl` in `src/config.js`.
+3. Decide how graduates will apply, then update the wording on the How to apply page (`how-to-apply.html`) and the first step in `src/data/content.js`.
 4. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 5. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.
 6. If you have no previous graduates yet, empty the `quotes` list in `src/data/feedback.js`: the feedback page and home highlight then hide the sample.
 
-## Opening and closing applications
+## Changing the colours
 
-In `src/config.js`, set `applicationsOpen` to `false` to show a "closed" message on the Apply page.
+The site uses a dark blue theme. All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. Keep light text on dark backgrounds readable (aim for good contrast).
 
 ## Before going public
 
 - [ ] All dummy data replaced and `usingDummyData` set to `false`
 - [ ] Written permission for every named person, photo and quote
-- [ ] Google Form tested; test responses deleted
+- [ ] How graduates will apply decided, and the How to apply page updated
 - [ ] Privacy notice and accessibility statement reviewed
 - [ ] Checked on a phone and with the keyboard only

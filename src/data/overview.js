@@ -1,7 +1,7 @@
 // DUMMY DATA: sample overview of skills and what is covered. Replace with the real programme details before launch.
 window.SITE_OVERVIEW = {
   "lead": "Over 12 weeks you'll build these skills through real work, mentoring and structured learning.",
-  "note": "This is an overview of some of what you'll experience. Exact activities vary by team.",
+  "note": "This is an overview of some of what you'll experience. Exact activities vary depending on the projects the central team is working on.",
   "groups": [
     {
       "title": "Educational skills",
@@ -51,7 +51,7 @@ window.SITE_OVERVIEW = {
           "covers": [
             "Mapping the company's products, services and customers",
             "Seeing how they fit together",
-            "Understanding where each team contributes"
+            "Understanding where each area of the central team contributes"
           ]
         },
         {
