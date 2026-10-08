@@ -46,7 +46,10 @@
       }
       var header = el("header", { class: "site" });
       var wrap = el("div", { class: "wrap" });
-      wrap.appendChild(el("a", { class: "brand", href: "index.html", text: (COMPANY.name || "") + " " + (CFG.hubName || "Graduate Hub") }));
+      var brand = el("a", { class: "brand", href: "index.html" });
+      if (CFG.logo) brand.appendChild(el("img", { class: "brand-logo", src: CFG.logo, alt: CFG.logoAlt || "", height: "28" }));
+      brand.appendChild(el("span", { text: (COMPANY.name || "") + " " + (CFG.hubName || "Graduate Hub") }));
+      wrap.appendChild(brand);
       var btn = el("button", { class: "menu-btn", type: "button", "aria-expanded": "false", "aria-controls": "main-nav", text: "Menu" });
       wrap.appendChild(btn);
       var nav = el("nav", { id: "main-nav", "aria-label": "Main" });

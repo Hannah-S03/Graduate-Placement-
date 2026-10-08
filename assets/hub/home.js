@@ -98,6 +98,15 @@
   };
 
   // ---------- progress update ----------
+  // One line shown while the Progress update panel is folded.
+  Hub.homePanels.updateLine = function () {
+    var cw = Hub.currentWeek(), goals = weeklyGoalsFor(cw.week), done = goals.filter(function (g) { return g.done; }).length;
+    var sum = Hub.progressSummary(), up = S.state.updates[String(cw.week)], parts = ["Week " + cw.week];
+    parts.push(goals.length ? "goals " + done + " of " + goals.length + " done" : "no weekly goals yet");
+    if (sum.overall !== null) parts.push("overall " + sum.overall + "%");
+    parts.push(up && moodLabel(up.mood) ? "feeling " + moodLabel(up.mood).toLowerCase() : "no update saved yet");
+    return parts.join(" · ");
+  };
   Hub.homePanels.update = function (status) {
     var sec = Hub.panel("Progress update", "update");
     var summaryHost = el("div"), formHost = el("div"), copyHost = el("div");

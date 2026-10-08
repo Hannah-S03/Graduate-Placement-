@@ -110,11 +110,19 @@
         host.textContent = "";
         var items = Hub.reminders();
         if (!items.length) { host.appendChild(el("p", { text: "Nothing needs your attention right now." })); return; }
-        var ul = el("ul", { class: "plain" });
+        var rank = { danger: 0, warn: 1 }, names = { danger: "Overdue", warn: "Coming up", info: "To do" };
+        items = items.map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) { return ((rank[a.r.kind] === undefined ? 2 : rank[a.r.kind]) - (rank[b.r.kind] === undefined ? 2 : rank[b.r.kind])) || a.i - b.i; }).map(function (x) { return x.r; });
+        var counts = {};
+        items.forEach(function (r) { counts[r.kind] = (counts[r.kind] || 0) + 1; });
+        var ul = null, last = null;
         (all ? items : items.slice(0, 5)).forEach(function (r) {
-          ul.appendChild(el("li", {}, [Hub.badge(r.kind === "danger" ? "Overdue" : r.kind === "warn" ? "Soon" : "To do", r.kind), " ", el("a", { href: r.href, text: r.text })]));
+          if (r.kind !== last) {
+            last = r.kind;
+            host.appendChild(el("h3", { class: "rem-group rem-" + r.kind, text: (names[r.kind] || "To do") + " (" + counts[r.kind] + ")" }));
+            ul = el("ul", { class: "plain" }); host.appendChild(ul);
+          }
+          ul.appendChild(el("li", {}, [el("a", { href: r.href, text: r.text })]));
         });
-        host.appendChild(ul);
         if (items.length > 5) {
           var b = el("button", { type: "button", class: "btn small secondary", text: all ? "Show fewer" : "Show " + (items.length - 5) + " more" });
           b.addEventListener("click", function () { all = !all; refresh(); var again = host.querySelector("button"); if (again) again.focus(); });
@@ -238,9 +246,9 @@
       card.appendChild(edit);
       body.appendChild(card);
       var grid = el("div", { class: "home-grid" });
-      function add(sec, start, cls) { Hub.collapsible(sec, { start: start }); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
+      function add(sec, start, cls, opts) { opts = opts || {}; opts.start = start; Hub.collapsible(sec, opts); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
       add(Hub.homePanels.weekly(status), "open");
-      add(Hub.homePanels.update(status), "closed-on-phone");
+      add(Hub.homePanels.update(status), "closed", "", { summary: Hub.homePanels.updateLine, openLabel: "Write my update" });
       add(remindersPanel(), "open");
       add(Hub.homePanels.calendar(status), "open", "span-2");
       add(progressPanel(), "closed-on-phone");

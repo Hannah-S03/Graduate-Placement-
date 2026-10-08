@@ -2,6 +2,8 @@
 window.SITE_CONFIG = {
   companyName: "Brightpath Technologies", // DUMMY (fictional company)
   hubName: "Graduate Hub",
+  logo: "assets/logo.svg", // DUMMY placeholder. Replace the file (SVG or PNG) or point to your own; leave "" for no logo
+  logoAlt: "", // leave empty because the company name is shown next to the logo
   programmeName: "Graduate Placement Programme",
   usingDummyData: true, // set to false once all content is real; this hides the sample-content banner
   // The dates of your graduate programme. They drive the progress bar at the top of My profile until a graduate

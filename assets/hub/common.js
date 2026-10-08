@@ -311,7 +311,19 @@
     btn.appendChild(el("span", { text: h.textContent }));
     btn.appendChild(el("span", { class: "chev", "aria-hidden": "true" }));
     h.textContent = ""; h.appendChild(btn);
-    function set(open) { btn.setAttribute("aria-expanded", String(open)); body.hidden = !open; sec.classList.toggle("is-collapsed", !open); }
+    var line = null;
+    if (opts.summary) {
+      line = el("div", { class: "panel-summary" });
+      var text = el("p", { class: "muted" }), open = el("button", { type: "button", class: "btn small secondary", text: opts.openLabel || "Open" });
+      open.addEventListener("click", function () { set(true); var first = body.querySelector("select, input, textarea, button"); if (first) first.focus(); });
+      line.appendChild(text); line.appendChild(open); line.text = text;
+      sec.appendChild(line);
+    }
+    function set(open) {
+      btn.setAttribute("aria-expanded", String(open)); body.hidden = !open; sec.classList.toggle("is-collapsed", !open);
+      if (line) { line.hidden = open; if (!open) line.text.textContent = opts.summary(); }
+    }
+    if (line) Hub.onChange("summary-line", function () { if (!line.hidden) line.text.textContent = opts.summary(); });
     var phone = !!(window.matchMedia && window.matchMedia("(max-width: 700px)").matches), start = opts.start || "open";
     set(start === "open" ? true : start === "closed" ? false : !phone);
     btn.addEventListener("click", function () { set(body.hidden); });

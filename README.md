@@ -63,6 +63,12 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 
 The base text size is the `font-size: 14.5px` line on the `html` rule near the top of `assets/site.css`. Make it larger (for example `16px`) for roomier text, or smaller for a tighter page. Almost everything scales from it. Panel spacing is set on the `.panel` rule, and the page width in `--max`.
 
+## Adding your logo and branding
+
+1. Put your logo file in the `assets` folder (SVG or PNG, about 28 px tall works best) and set `logo: "assets/your-file.svg"` in `src/config.js`. Set `logo: ""` to show no logo. The current `assets/logo.svg` is a placeholder.
+2. Change the three brand colours below (`--navy`, `--brand`, `--accent`).
+3. Set `companyName` and `hubName` in `src/config.js`.
+
 ## Changing the colours
 
 All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The main ones are `--navy` (header, footer and the programme card), `--brand` (buttons and links) and `--accent` (the thin gold lines; decoration only, so never use it for text). To match company branding, change `--navy`, `--brand` and `--accent`. Keep text readable against its background (aim for good contrast).
