@@ -1,4 +1,4 @@
-// Objectives, eligibility, process, and FAQs. DUMMY wording where noted; review before launch.
+// Scheme objectives and graduate FAQs. DUMMY wording where noted; review before launch.
 window.SITE_CONTENT = {
   programmeObjectives: [
     "Give graduates exposure to a range of areas within the central team so they can find what interests them most.",
@@ -10,35 +10,16 @@ window.SITE_CONTENT = {
     "Deliver scoped work in a new area within a short time frame.",
     "Adapt quickly: learn new tools, people and ways of working as you move between areas.",
     "Communicate with different audiences, in writing and in person.",
-    "Compare areas of work and make a reasoned choice about their next step.",
-    "Keep a reflection log that evidences progress."
-  ],
-  eligibility: [
-    "Graduated, or graduating within the next 6 months (to confirm).",
-    "The right to work in the placement country.",
-    "Available for all 12 weeks of the placement."
-  ],
-  criteria: [
-    { name: "Motivation and curiosity", text: "Why you want this placement and what you want to learn." },
-    { name: "Relevant knowledge", text: "What you've learned from your studies or projects." },
-    { name: "Communication", text: "Explaining your ideas clearly, in writing and in person." },
-    { name: "Teamwork", text: "How you work with and learn from other people." },
-    { name: "Problem solving", text: "How you approach unfamiliar problems." }
-  ],
-  process: [
-    { title: "Apply", text: "Details of how to apply will be shared by the programme team (to be confirmed)." },
-    { title: "Screening", text: "We review every application against the criteria on this site." },
-    { title: "Interview", text: "One 45-minute interview, by video or in person, including a short discussion of work you're proud of." },
-    { title: "Offer", text: "We aim to tell you our decision within about 2 weeks of your interview." },
-    { title: "Before you start", text: "We send you everything you need before week 1." }
+    "Compare areas of work and make a reasoned choice about your next step.",
+    "Keep a reflection log that evidences your progress."
   ],
   faqs: [
-    { q: "Is the placement paid?", a: "To be confirmed. (Dummy answer: replace with the real pay information.)" },
-    { q: "Where will I work?", a: "Hybrid, with about 3 days a week in the office. (Dummy answer.)" },
-    { q: "Can I choose what I work on?", a: "The programme team will talk to you about the areas that interest you. We use this to plan your experience, not to select applicants." },
-    { q: "Can I apply if I have not graduated yet?", a: "Yes, if you graduate within 6 months of the start date. (To confirm.)" },
-    { q: "What if I need adjustments during the process or placement?", a: "Contact us. We will work with you to put them in place." },
-    { q: "What happens after the 12 weeks?", a: "You have a career conversation in week 12 to talk through your next steps. (Dummy answer: replace with the real policy.)" },
-    { q: "Does this website collect my details?", a: "No. This website does not take applications; it only shows information. See the privacy notice for details." }
+    { q: "Where is my information stored?", a: "Only in this browser, on this device. Nothing you enter is sent to a server, to the programme team or to your manager. See the privacy notice." },
+    { q: "Will I lose my information if I use another computer or browser?", a: "Yes. The hub saves to the browser you use, so another browser or device starts empty. Use Download my data (on My profile) to take a copy, and Restore from file to load it somewhere else." },
+    { q: "What if I clear my browser data?", a: "Clearing site data or cookies in your browser can delete your hub information. Download a copy now and then so you can restore it." },
+    { q: "Can my manager or the programme team see my goals and reflections?", a: "No. They are private to you. If you want to share something, use Print / save as PDF or Download my scheme record on the Achievements page." },
+    { q: "How do training reminders work?", a: "Each required training item has a due date worked out from your placement start date. The hub shows due soon and overdue reminders on My profile and Learning. To get a reminder in your own calendar, use Add to calendar to download a calendar file." },
+    { q: "Who do I ask if something is wrong or missing?", a: "Contact the programme team using the details below. (Dummy answer: replace with the real contact route.)" },
+    { q: "Is the content here real?", a: "While you see the yellow sample-content banner, the company, people and resources shown are invented placeholders." }
   ]
 };

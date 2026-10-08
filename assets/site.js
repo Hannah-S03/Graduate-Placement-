@@ -2,29 +2,28 @@
   "use strict";
   var CFG = window.SITE_CONFIG || {};
   var COMPANY = window.SITE_COMPANY || {};
-  var TEAM = window.SITE_TEAM || [];
   var FEEDBACK = window.SITE_FEEDBACK || { quotes: [], results: [] };
   var CONTENT = window.SITE_CONTENT || {};
   var OVERVIEW = window.SITE_OVERVIEW || { groups: [] };
 
   var NAV = [
-    ["index.html", "Home"],
-    ["about-company.html", "About us"],
-    ["meet-the-team.html", "Meet the team"],
-    ["about-placement.html", "The placement"],
-    ["overview.html", "12-week overview"],
-    ["how-to-apply.html", "How to apply"],
-    ["graduate-feedback.html", "Graduate feedback"],
-    ["faqs.html", "FAQs"],
-    ["contact.html", "Contact"]
+    ["index.html", "My profile"],
+    ["journey.html", "My journey"],
+    ["development.html", "My development"],
+    ["links.html", "Quick links"],
+    ["learning.html", "Learning"],
+    ["company.html", "Company hub"],
+    ["reflection.html", "Reflection"],
+    ["achievements.html", "Achievements"]
   ];
+  var FOOTER = [["help.html", "Help"], ["privacy.html", "Privacy notice"], ["accessibility.html", "Accessibility statement"]];
 
-  // Small helper: builds elements with text set safely (never innerHTML).
+  // Builds elements with text set safely (never innerHTML).
   function el(tag, attrs, kids) {
     var node = document.createElement(tag);
     Object.keys(attrs || {}).forEach(function (k) {
       if (k === "text") node.textContent = attrs[k];
-      else node.setAttribute(k, attrs[k]);
+      else if (attrs[k] !== false && attrs[k] !== null && attrs[k] !== undefined) node.setAttribute(k, attrs[k]);
     });
     (kids || []).forEach(function (kid) {
       if (kid) node.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
@@ -32,26 +31,22 @@
     return node;
   }
   function initials(name) {
-    return name.split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join("").toUpperCase();
+    return (name || "").trim().split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join("").toUpperCase();
   }
-  function currentFile() {
-    var f = location.pathname.split("/").pop();
-    return f || "index.html";
-  }
+  function currentFile() { var f = location.pathname.split("/").pop(); return f || "index.html"; }
 
   function buildChrome() {
     var page = currentFile();
     var h = document.getElementById("site-header");
     if (h) {
-      h.className = "site-chrome";
       if (CFG.usingDummyData) {
         h.appendChild(el("div", { class: "banner", role: "note" }, [
-          el("div", { class: "wrap", text: "Sample content: the company, people, quotes and programme details on this site are invented placeholders for layout review." })
+          el("div", { class: "wrap", text: "Sample content: the company, people, resources and programme details on this site are invented placeholders for layout review." })
         ]));
       }
       var header = el("header", { class: "site" });
       var wrap = el("div", { class: "wrap" });
-      wrap.appendChild(el("a", { class: "brand", href: "index.html", text: COMPANY.name || "Graduate Placement" }));
+      wrap.appendChild(el("a", { class: "brand", href: "index.html", text: (COMPANY.name || "") + " " + (CFG.hubName || "Graduate Hub") }));
       var btn = el("button", { class: "menu-btn", type: "button", "aria-expanded": "false", "aria-controls": "main-nav", text: "Menu" });
       wrap.appendChild(btn);
       var nav = el("nav", { id: "main-nav", "aria-label": "Main" });
@@ -75,11 +70,13 @@
       var footer = el("footer", { class: "site" });
       var fw = el("div", { class: "wrap" });
       var links = el("ul");
-      [["looking-for.html", "What we're looking for"], ["privacy.html", "Privacy notice"], ["accessibility.html", "Accessibility statement"], ["contact.html", "Contact"]].forEach(function (l) {
-        links.appendChild(el("li", {}, [el("a", { href: l[0], text: l[1] })]));
+      FOOTER.forEach(function (l) {
+        var a = el("a", { href: l[0], text: l[1] });
+        if (l[0] === page) a.setAttribute("aria-current", "page");
+        links.appendChild(el("li", {}, [a]));
       });
       fw.appendChild(links);
-      fw.appendChild(el("p", { text: "© " + new Date().getFullYear() + " " + (COMPANY.name || "") + ". " + (CFG.programmeName || "") + "." }));
+      fw.appendChild(el("p", { text: "© " + new Date().getFullYear() + " " + (COMPANY.name || "") + ". " + (CFG.programmeName || "") + ". What you enter in this hub is saved only in your own browser." }));
       footer.appendChild(fw);
       f.appendChild(footer);
     }
@@ -87,19 +84,8 @@
 
   var R = {};
 
-  R.facts = function (t) {
-    var items = [
-      ["12 weeks", "full-time placement"],
-      ["1 central team", "a range of areas to experience"],
-      ["1 mentor", "with you throughout"],
-      [CFG.nextStartDate || "TBC", "next start date"]
-    ];
-    var ul = el("ul", { class: "facts" });
-    items.forEach(function (i) { ul.appendChild(el("li", {}, [el("strong", { text: i[0] }), el("span", { text: i[1] })])); });
-    t.appendChild(ul);
-  };
-
-  R.company = function (t) {
+  // About the company (mission, values, culture, size).
+  R.aboutCompany = function (t) {
     t.appendChild(el("p", { class: "lead", text: COMPANY.tagline || "" }));
     t.appendChild(el("p", { text: COMPANY.about || "" }));
     var g = el("div", { class: "grid" });
@@ -107,65 +93,46 @@
       g.appendChild(el("div", { class: "card" }, [el("h3", { text: c[0] }), el("p", { text: c[1] || "" })]));
     });
     t.appendChild(g);
-    t.appendChild(el("h2", { text: "Our values" }));
+    t.appendChild(el("h3", { text: "Our values" }));
     var v = el("p");
     (COMPANY.values || []).forEach(function (x) { v.appendChild(el("span", { class: "tag", text: x })); });
     t.appendChild(v);
+  };
+
+  R.centralTeam = function (t) {
     var ct = COMPANY.centralTeam;
-    if (ct) {
-      t.appendChild(el("h2", { text: ct.title || "The central team" }));
-      t.appendChild(el("p", { text: ct.intro || "" }));
-      var ag = el("div", { class: "grid" });
-      (ct.areas || []).forEach(function (a) {
-        ag.appendChild(el("article", { class: "card" }, [el("h3", { text: a.name }), el("p", { text: a.text })]));
-      });
-      t.appendChild(ag);
-    }
-  };
-
-  R.companySummary = function (t) {
-    t.appendChild(el("h2", { text: "About " + (COMPANY.name || "us") }));
-    t.appendChild(el("p", { text: COMPANY.about || "" }));
-    t.appendChild(el("p", {}, [el("a", { href: "about-company.html", text: "More about the company" })]));
-  };
-
-  R.team = function (t) {
-    var g = el("div", { class: "grid" });
-    TEAM.forEach(function (p) {
-      g.appendChild(el("article", { class: "card" }, [
-        el("div", { class: "avatar", "aria-hidden": "true", text: initials(p.name) }),
-        el("h3", { text: p.name }),
-        el("p", { class: "tag", text: p.role }),
-        el("p", { text: p.bio }),
-        el("p", {}, [el("strong", { text: "With graduates: " }), p.with])
-      ]));
+    if (!ct) return;
+    t.appendChild(el("p", { text: ct.intro || "" }));
+    var ag = el("div", { class: "grid" });
+    (ct.areas || []).forEach(function (a) {
+      ag.appendChild(el("article", { class: "card" }, [el("h3", { text: a.name }), el("p", { text: a.text })]));
     });
-    t.appendChild(g);
+    t.appendChild(ag);
   };
 
   R.objectives = function (t) {
-    t.appendChild(el("h2", { text: "Programme objectives" }));
+    t.appendChild(el("h3", { text: "What the scheme is for" }));
     var ol = el("ol");
     (CONTENT.programmeObjectives || []).forEach(function (o) { ol.appendChild(el("li", { text: o })); });
     t.appendChild(ol);
-    t.appendChild(el("h2", { text: "By week 12, you will be able to" }));
+    t.appendChild(el("h3", { text: "By week 12, you will be able to" }));
     var ul = el("ul");
     (CONTENT.graduateObjectives || []).forEach(function (o) { ul.appendChild(el("li", { text: o })); });
     t.appendChild(ul);
   };
 
   R.overview = function (t) {
-    if (OVERVIEW.lead) t.appendChild(el("p", { class: "lead", text: OVERVIEW.lead }));
+    if (OVERVIEW.lead) t.appendChild(el("p", { text: OVERVIEW.lead }));
     (OVERVIEW.groups || []).forEach(function (g) {
-      var section = el("section", { class: "skill-group", "aria-labelledby": "grp-" + g.title.toLowerCase().replace(/\s+/g, "-") });
-      section.appendChild(el("h2", { id: "grp-" + g.title.toLowerCase().replace(/\s+/g, "-"), text: g.title }));
+      var section = el("section", { class: "skill-group" });
+      section.appendChild(el("h4", { text: g.title }));
       if (g.intro) section.appendChild(el("p", { text: g.intro }));
       var grid = el("div", { class: "grid" });
       (g.skills || []).forEach(function (sk) {
         var ul = el("ul");
         (sk.covers || []).forEach(function (c) { ul.appendChild(el("li", { text: c })); });
         grid.appendChild(el("article", { class: "card" }, [
-          el("h3", { text: sk.name }),
+          el("h5", { text: sk.name }),
           el("p", { class: "covers-label", text: "What we'll cover" }),
           ul
         ]));
@@ -174,27 +141,6 @@
       t.appendChild(section);
     });
     if (OVERVIEW.note) t.appendChild(el("p", { class: "note", text: OVERVIEW.note }));
-  };
-
-  R.eligibility = function (t) {
-    var ul = el("ul");
-    (CONTENT.eligibility || []).forEach(function (x) { ul.appendChild(el("li", { text: x })); });
-    t.appendChild(ul);
-  };
-  R.criteria = function (t) {
-    var g = el("div", { class: "grid" });
-    (CONTENT.criteria || []).forEach(function (c) { g.appendChild(el("div", { class: "card" }, [el("h3", { text: c.name }), el("p", { text: c.text })])); });
-    t.appendChild(g);
-  };
-  R.process = function (t) {
-    var ol = el("ol", { class: "steps" });
-    (CONTENT.process || []).forEach(function (s) { ol.appendChild(el("li", {}, [el("strong", { text: s.title }), s.text])); });
-    t.appendChild(ol);
-  };
-  R.dates = function (t) {
-    var ul = el("ul");
-    ul.appendChild(el("li", { text: "Placement start date: " + (CFG.nextStartDate || "To be confirmed") }));
-    t.appendChild(ul);
   };
 
   R.feedback = function (t) {
@@ -217,16 +163,6 @@
       t.appendChild(ul);
     }
   };
-  R.feedbackHighlight = function (t) {
-    var q = (FEEDBACK.quotes || [])[0];
-    if (!q) { t.hidden = true; return; }
-    t.appendChild(el("h2", { text: "What past graduates say" }));
-    t.appendChild(el("blockquote", {}, [
-      el("p", { text: "“" + q.quote + "”" }),
-      el("footer", { text: q.name + ", " + q.cohort + ", " + q.team })
-    ]));
-    t.appendChild(el("p", {}, [el("a", { href: "graduate-feedback.html", text: "Read more graduate feedback" })]));
-  };
 
   R.faqs = function (t) {
     t.classList.add("faq");
@@ -240,6 +176,10 @@
     t.appendChild(el("p", { text: "We aim to reply within 2 working days." }));
   };
 
+  // Shared with the hub scripts (assets/hub/*.js), which add their own renderers before the page is built.
+  window.SiteUtil = { el: el, initials: initials };
+  window.SiteRenderers = R;
+
   function run() {
     buildChrome();
     document.querySelectorAll("[data-render]").forEach(function (t) {
@@ -247,7 +187,7 @@
       if (fn) fn(t);
     });
     var title = document.querySelector("title");
-    if (title && COMPANY.name && title.textContent.indexOf(COMPANY.name) === -1) title.textContent += " | " + COMPANY.name;
+    if (title && COMPANY.name && title.textContent.indexOf(COMPANY.name) === -1) title.textContent += " | " + COMPANY.name + " " + (CFG.hubName || "");
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();

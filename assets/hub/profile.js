@@ -1,0 +1,234 @@
+// My profile (home page): setup, profile card, overall progress tracker, reminders, pinned links, data backup.
+(function () {
+  "use strict";
+  var Hub = window.Hub, el = Hub.el, S = Hub.store, R = window.SiteRenderers;
+
+  R.profile = function (t) {
+    var status = Hub.status();
+    var body = el("div");
+    var editing = false;
+    Hub.notices(t);
+    t.appendChild(status);
+    t.appendChild(body);
+
+    function profileForm(first) {
+      var p = S.state.profile;
+      var form = Hub.form({
+        fields: [
+          { name: "name", label: "Your name", required: true, autocomplete: "name", maxlength: 120 },
+          { name: "role", label: "Your role or area", hint: "For example: Graduate, central team.", maxlength: 200 },
+          { name: "startDate", label: "Placement start date", type: "date", required: true, hint: "Used to work out your week number and training due dates." },
+          { name: "manager", label: "Your manager", maxlength: 120 },
+          { name: "mentor", label: "Your mentor", maxlength: 120 },
+          { name: "interests", label: "Career interests", type: "textarea", hint: "What would you like to learn or become? Only you can see this." }
+        ],
+        values: p,
+        submitLabel: first ? "Set up my hub" : "Save profile",
+        onCancel: first ? null : function () { editing = false; render(); },
+        onSubmit: function (v) {
+          Object.keys(v).forEach(function (k) { S.state.profile[k] = v[k]; });
+          editing = false;
+          Hub.save(status, first ? "Your hub is ready." : "Profile saved.");
+          render();
+        }
+      });
+      return form;
+    }
+
+    function setup() {
+      var card = Hub.panel("Set up your hub", "setup");
+      card.appendChild(el("p", { text: "Tell us a little about you. Your answers are saved only in this browser, and nobody else can see them." }));
+      card.appendChild(profileForm(true));
+      body.appendChild(card);
+    }
+
+    function placementPanel() {
+      var pl = S.placement(S.state.profile.startDate);
+      var sec = Hub.panel("Your placement");
+      if (pl.status === "none") { sec.appendChild(Hub.needStart()); return sec; }
+      if (pl.status === "before") {
+        sec.appendChild(el("p", { class: "big", text: "Starts in " + Hub.plural(pl.startsIn, "day", "days") }));
+        sec.appendChild(el("p", { text: "Your placement starts on " + Hub.fmtDate(S.state.profile.startDate) + "." }));
+        sec.appendChild(Hub.progress(0, "Placement progress"));
+      } else if (pl.status === "during") {
+        sec.appendChild(el("p", { class: "big", text: "Week " + pl.week + " of " + pl.totalWeeks }));
+        sec.appendChild(el("p", { text: "Started " + Hub.fmtDate(S.state.profile.startDate) + ". Ends " + Hub.fmtDate(pl.endDate) + "." }));
+        sec.appendChild(Hub.progress(pl.pct, "Placement progress"));
+      } else {
+        sec.appendChild(el("p", { class: "big", text: "Placement complete" }));
+        sec.appendChild(el("p", { text: "You finished all " + pl.totalWeeks + " weeks on " + Hub.fmtDate(pl.endDate) + ". Well done!" }));
+        sec.appendChild(Hub.progress(100, "Placement progress"));
+      }
+      return sec;
+    }
+
+    function progressPanel() {
+      var sum = Hub.progressSummary();
+      var sec = Hub.panel("Your progress tracker");
+      if (sum.overall === null) {
+        sec.appendChild(el("p", { text: "Add a goal or a milestone, or start your required training, and your overall progress will appear here." }));
+      } else {
+        sec.appendChild(el("p", { class: "big", text: sum.overall + "% overall" }));
+        sec.appendChild(Hub.progress(sum.overall, "Overall progress"));
+      }
+      if (!S.state.goals.length && !S.state.milestones.length) {
+        sec.appendChild(el("p", {}, ["Add goals on ", el("a", { href: "journey.html", text: "My journey" }), " and milestones on ", el("a", { href: "development.html", text: "My development" }), " to bring them into your progress."]));
+      }
+      var list = el("ul", { class: "parts" });
+      sum.parts.forEach(function (p) {
+        var li = el("li");
+        li.appendChild(el("div", { class: "part-head" }, [el("a", { href: p.href, text: p.label }), el("span", { class: "muted", text: p.pct === null ? p.detail : Math.round(p.pct) + "% · " + p.detail })]));
+        li.appendChild(Hub.progress(p.pct === null ? 0 : p.pct, p.label + " progress"));
+        list.appendChild(li);
+      });
+      sec.appendChild(list);
+      sec.appendChild(el("details", {}, [
+        el("summary", { text: "How is this worked out?" }),
+        el("p", { text: "Overall progress is the average of three parts: your goals (the average progress across all your goals), your milestones (the share you have achieved) and your required training (the share you have completed). A part with nothing in it yet is left out. Your week number is shown separately." })
+      ]));
+      return sec;
+    }
+
+    function remindersPanel() {
+      var sec = Hub.panel("Reminders");
+      var items = Hub.reminders();
+      if (!items.length) { sec.appendChild(el("p", { text: "Nothing needs your attention right now." })); return sec; }
+      var ul = el("ul", { class: "plain" });
+      items.slice(0, 8).forEach(function (r) {
+        ul.appendChild(el("li", {}, [Hub.badge(r.kind === "danger" ? "Overdue" : r.kind === "warn" ? "Soon" : "To do", r.kind), " ", el("a", { href: r.href, text: r.text })]));
+      });
+      sec.appendChild(ul);
+      return sec;
+    }
+
+    function pinnedPanel() {
+      var sec = Hub.panel("Pinned links");
+      var pinned = S.state.links.pinned;
+      var all = Hub.allLinks().filter(function (l) { return pinned.indexOf(l.id) !== -1; });
+      if (!all.length) {
+        sec.appendChild(el("p", {}, ["You have not pinned any links yet. ", el("a", { href: "links.html", text: "Pin company systems and resources" }), "."]));
+        return sec;
+      }
+      var ul = el("ul", { class: "plain" });
+      all.slice(0, 8).forEach(function (l) {
+        ul.appendChild(el("li", {}, [l.url ? Hub.link(l.url, l.name) : el("span", { text: l.name + " (link to be added)" })]));
+      });
+      sec.appendChild(ul);
+      sec.appendChild(el("p", {}, [el("a", { href: "links.html", text: "All quick links" })]));
+      return sec;
+    }
+
+    function goalsPanel() {
+      var sec = Hub.panel("Next goals");
+      var open = S.state.goals.filter(function (g) { return g.progress < 100; });
+      open.sort(function (a, b) { return (a.target || "9999") < (b.target || "9999") ? -1 : 1; });
+      if (!open.length) {
+        sec.appendChild(el("p", {}, [S.state.goals.length ? "All your goals are done. " : "You have not added any goals yet. ", el("a", { href: "journey.html", text: "Go to My journey" }), "."]));
+        return sec;
+      }
+      var ul = el("ul", { class: "plain" });
+      open.slice(0, 3).forEach(function (g) {
+        ul.appendChild(el("li", {}, [el("strong", { text: g.title }), el("span", { class: "muted", text: g.target ? " · due " + Hub.fmtDate(g.target) : "" }), Hub.progress(g.progress, g.title + " progress")]));
+      });
+      sec.appendChild(ul);
+      return sec;
+    }
+
+    function achievementsPanel() {
+      var sec = Hub.panel("Latest achievements");
+      var list = S.state.achievements.slice().sort(function (a, b) { return (a.date || "") < (b.date || "") ? 1 : -1; }).slice(0, 3);
+      if (!list.length) { sec.appendChild(el("p", {}, ["Nothing recorded yet. ", el("a", { href: "achievements.html", text: "Add a project or accomplishment" }), "."])); return sec; }
+      var ul = el("ul", { class: "plain" });
+      list.forEach(function (a) { ul.appendChild(el("li", {}, [el("strong", { text: a.title }), el("span", { class: "muted", text: a.date ? " · " + Hub.fmtDate(a.date) : "" })])); });
+      sec.appendChild(ul);
+      return sec;
+    }
+
+    function dataPanel() {
+      var sec = Hub.panel("My data");
+      sec.appendChild(el("p", { text: "Everything you enter is saved only in this browser on this device. Download a copy now and then so you can restore it if browser data is cleared, or load it on another device." }));
+      var row = el("div", { class: "row" });
+      var dl = el("button", { type: "button", class: "btn", text: "Download my data" });
+      dl.addEventListener("click", function () {
+        Hub.download("graduate-hub-" + S.today() + ".json", S.exportJSON(), "application/json");
+        status.say("Your data was downloaded as a file.", false);
+      });
+      row.appendChild(dl);
+      sec.appendChild(row);
+
+      var restoreBox = el("div", { class: "restore" });
+      var fid = "restore-file";
+      restoreBox.appendChild(el("label", { for: fid, text: "Restore from a file you downloaded" }));
+      var fileInput = el("input", { type: "file", id: fid, accept: ".json,application/json" });
+      var confirmBox = el("div", { class: "confirm-row" });
+      fileInput.addEventListener("change", function () {
+        confirmBox.textContent = "";
+        var file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var text = String(reader.result || "");
+          var yes = el("button", { type: "button", class: "btn small danger", text: "Yes, replace my data" });
+          var no = el("button", { type: "button", class: "btn small secondary", text: "Cancel" });
+          yes.addEventListener("click", function () {
+            var res = S.importJSON(text);
+            if (res.ok) { status.say("Your data was restored from the file.", false); editing = false; render(); }
+            else { confirmBox.textContent = ""; status.say(res.error, true); fileInput.value = ""; }
+          });
+          no.addEventListener("click", function () { confirmBox.textContent = ""; fileInput.value = ""; fileInput.focus(); });
+          confirmBox.appendChild(el("span", { class: "confirm-text", text: "This replaces everything currently in the hub. Continue?" }));
+          confirmBox.appendChild(yes); confirmBox.appendChild(no);
+          yes.focus();
+        };
+        reader.onerror = function () { status.say("That file could not be read.", true); };
+        reader.readAsText(file);
+      });
+      restoreBox.appendChild(fileInput);
+      restoreBox.appendChild(confirmBox);
+      sec.appendChild(restoreBox);
+
+      sec.appendChild(el("div", { class: "row" }, [Hub.confirmButton({
+        label: "Reset everything", message: "This deletes all your hub information from this browser. Continue?", confirmLabel: "Yes, delete everything",
+        onConfirm: function () { S.reset(); editing = false; status.say("Everything was deleted from this browser.", false); render(); }
+      })]));
+      return sec;
+    }
+
+    function dashboard() {
+      var p = S.state.profile;
+      var card = Hub.panel(p.name, "profile-card");
+      card.heading.setAttribute("tabindex", "-1");
+      card.insertBefore(el("div", { class: "avatar", "aria-hidden": "true", text: window.SiteUtil.initials(p.name) }), card.firstChild);
+      var meta = [];
+      if (p.role) meta.push(p.role);
+      if (p.manager) meta.push("Manager: " + p.manager);
+      if (p.mentor) meta.push("Mentor: " + p.mentor);
+      if (meta.length) card.appendChild(el("p", { class: "muted", text: meta.join(" · ") }));
+      if (p.interests) card.appendChild(el("p", {}, [el("strong", { text: "Career interests: " }), p.interests]));
+      var edit = el("button", { type: "button", class: "btn secondary small", text: "Edit profile" });
+      edit.addEventListener("click", function () { editing = true; render(); });
+      card.appendChild(edit);
+      body.appendChild(card);
+      body.appendChild(placementPanel());
+      body.appendChild(progressPanel());
+      body.appendChild(remindersPanel());
+      var two = el("div", { class: "grid two" });
+      two.appendChild(pinnedPanel()); two.appendChild(goalsPanel());
+      body.appendChild(two);
+      body.appendChild(achievementsPanel());
+      body.appendChild(dataPanel());
+    }
+
+    function render() {
+      body.textContent = "";
+      if (!S.state.profile.name) setup();
+      else if (editing) {
+        var card = Hub.panel("Edit your profile");
+        card.appendChild(profileForm(false));
+        body.appendChild(card);
+        Hub.focus(card.heading);
+      } else dashboard();
+    }
+    render();
+  };
+})();

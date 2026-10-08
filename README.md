@@ -1,12 +1,33 @@
-# Graduate Placement Website
+# Graduate Hub
 
-A static, information-only website for a 12-week graduate placement where graduates work with the central team across a range of areas. The site does not take applications.
+A personalised digital hub that supports graduates throughout their scheme. It brings company information, placement details, development goals, learning, professional networks and progress tracking together in one place.
 
-Full requirements are in [`PRD.md`](PRD.md). **All company, people, quotes and skills details are dummy data** (fictional company "Brightpath Technologies") until you replace them.
+Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learning and wording are dummy data** (fictional company "Brightpath Technologies") until you replace them.
+
+## What graduates can do
+
+| Page | What it does |
+|---|---|
+| **My profile** (home) | Set up a profile, see "Week X of 12", the overall progress tracker, reminders, pinned links, and back up or restore data |
+| **My journey** | Add development, career and placement goals and update their progress |
+| **My development** | Record milestones and rate skills at the start and now |
+| **Quick links** | Pin company systems and resources, and add your own |
+| **Learning** | Required training with reminders (and calendar files), saved courses and opportunities |
+| **Company hub** | Company information, the central team, placement details, key contacts and your own network |
+| **Reflection** | A note on what you learnt each week |
+| **Achievements** | A portfolio of projects and accomplishments, with a printable and downloadable scheme record |
+
+## Where is the information saved?
+
+**Only in the browser you use, on that device.** There is no login and no server. Nothing graduates enter is sent anywhere, and managers and the programme team cannot see it. This means:
+
+- It does not follow a graduate to another browser or device.
+- Clearing browser data can delete it. **My profile > My data > Download my data** saves a copy, and **Restore from a file** loads it again.
+- On a shared computer, use **Reset everything** afterwards.
 
 ## Run it on your computer (localhost)
 
-You need Python 3 (or any simple web server). No install step.
+You need Python 3. No install step.
 
 ```bash
 git clone https://github.com/Hannah-S03/Graduate-Placement-.git
@@ -14,40 +35,38 @@ cd Graduate-Placement-
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000> in your browser. Stop the server with `Ctrl+C`.
+On Windows use `python -m http.server 8000` (or `py -m http.server 8000`). Then open <http://localhost:8000>. Stop the server with `Ctrl+C`.
 
-Only you can see the site while it runs this way. To make it public later, upload the same files to a static host (GitHub Pages, Netlify, or your organisation's hosting).
+Only you can see the site while it runs this way. To share it with a cohort, upload the same files to a static host (GitHub Pages, Netlify, or your organisation's hosting) over HTTPS, with access restricted if it should be internal only. Saved data is per web address, so graduates start fresh when the address changes.
 
 ## Project layout
 
 | Path | What it is |
 |---|---|
-| `*.html` | The pages (home, about, team, 12-week overview, how to apply, and so on) |
-| `assets/site.css`, `assets/site.js` | Shared styles, and the script that builds the menu, footer and page sections from the data files |
-| `src/config.js` | Site settings: names, start date, contact email, dummy-data banner |
-| `src/data/overview.js` | The 12-week overview: educational and personal skills, and what each covers |
-| `src/data/company.js` | About the company, including the central team and its areas of work |
-| `src/data/team.js` | Meet the team |
-| `src/data/feedback.js` | Previous graduate feedback |
-| `src/data/content.js` | Objectives, eligibility, criteria, process steps, FAQs |
+| `*.html` | The pages |
+| `assets/site.css` | All styles, including the dark blue theme and the print layout |
+| `assets/site.js` | Menu, footer and the company, objectives, skills and FAQ sections |
+| `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
+| `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
+| `src/config.js` | Names, placement length, contact email, dummy-data banner switch |
+| `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 
 ## Replacing the dummy content
 
-1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets).
-2. Edit `src/config.js`: company name, contact email, dates.
-3. Decide how graduates will apply, then update the wording on the How to apply page (`how-to-apply.html`) and the first step in `src/data/content.js`.
-4. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
-5. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.
-6. If you have no previous graduates yet, empty the `quotes` list in `src/data/feedback.js`: the feedback page and home highlight then hide the sample.
+1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date).
+2. Edit `src/config.js`: company name, contact email, placement length.
+3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
+4. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.
 
 ## Changing the colours
 
-The site uses a dark blue theme. All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. Keep light text on dark backgrounds readable (aim for good contrast).
+All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. Keep light text on dark backgrounds readable (aim for good contrast).
 
 ## Before going public
 
 - [ ] All dummy data replaced and `usingDummyData` set to `false`
 - [ ] Written permission for every named person, photo and quote
-- [ ] How graduates will apply decided, and the How to apply page updated
+- [ ] Required training, links and contacts checked
 - [ ] Privacy notice and accessibility statement reviewed
 - [ ] Checked on a phone and with the keyboard only
+- [ ] Decided how the hub will be hosted and who can reach it
