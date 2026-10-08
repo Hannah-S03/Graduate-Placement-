@@ -23,7 +23,7 @@ A personalised digital hub that supports graduates **throughout their scheme**, 
 | Audience | **Current graduates only.** Recruitment pages and the application form were removed |
 | Placement model | One central team: graduates gain experience and exposure in a range of areas within it (no rotations) |
 | Personalisation and data | **Saved in each person's own browser** (local storage). Private to that browser; not visible to managers or the programme team |
-| Look | Dark blue theme (deep navy background, light text, bright blue accent) |
+| Look | Light grey and white base with navy features (header, footer, buttons, programme card), serif headings and thin champagne-gold hairlines |
 | Build | Static site (HTML, CSS, JavaScript), no backend; runs on localhost first, hosting chosen later |
 | Documentation | Everything in this one file, `PRD.md` |
 
@@ -164,7 +164,7 @@ Overall progress is the **average of the parts that have something in them**: go
 | Area | Requirement |
 |---|---|
 | Accessibility | WCAG 2.2 AA: keyboard operation, visible focus, a skip link, every control labelled, errors and saves announced politely to screen readers, no information by colour alone, reduced motion respected |
-| Colour | Dark blue theme; all text and link colour pairs checked at 4.5:1 or better (lowest measured 6.4:1) |
+| Colour | Light base with navy features; gold is decoration only; all text and link colour pairs checked at 4.5:1 or better (lowest measured 6.2:1) |
 | Responsive | Works from 320 px wide phones to desktop; long text wraps instead of scrolling sideways |
 | Density | Compact: base text 14.5 px (nothing visible under 12.4 px), tight spacing and 8 px corners. On a laptop the home page is about 1,400 px tall (it was about 3,700 px); on a phone the home page is about 2,400 px (it was about 5,800 px) because lower panels start folded. Buttons and fields are at least 30 px tall on phones, and form fields are 16 px there so phones do not zoom in |
 | Forms | Real labels, inline error messages, confirmations on the page (no pop-up alerts); delete and reset always ask first |
@@ -222,4 +222,4 @@ Company details, the central team and areas, people and key contacts, graduate q
 3. Will graduates use shared or managed computers? (Browser-saved data is per browser and could be cleared by IT policy.)
 4. Will managers or the programme team later need to see progress? (That needs real accounts and a hosted backend, and data-protection review.)
 5. Hosting option and custom domain, and whether access must be restricted to the company.
-6. Organisation name and brand (the site currently uses a dark blue theme), and the contact route for help.
+6. Organisation name and brand (the site currently uses a light grey and white base with navy features and a champagne-gold accent), and the contact route for help.

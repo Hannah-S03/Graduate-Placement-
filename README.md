@@ -44,7 +44,7 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | Path | What it is |
 |---|---|
 | `*.html` | The pages |
-| `assets/site.css` | All styles, including the dark blue theme and the print layout |
+| `assets/site.css` | All styles, including the light grey / navy theme and the print layout |
 | `assets/site.js` | Menu, footer and the company, objectives, skills and FAQ sections |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
 | `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
@@ -65,7 +65,7 @@ The base text size is the `font-size: 14.5px` line on the `html` rule near the t
 
 ## Changing the colours
 
-All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. Keep light text on dark backgrounds readable (aim for good contrast).
+All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The main ones are `--navy` (header, footer and the programme card), `--brand` (buttons and links) and `--accent` (the thin gold lines; decoration only, so never use it for text). To match company branding, change `--navy`, `--brand` and `--accent`. Keep text readable against its background (aim for good contrast).
 
 ## Before going public
 
