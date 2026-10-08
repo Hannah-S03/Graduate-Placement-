@@ -48,6 +48,15 @@
     }
 
     // The progress bar shown first on the page. Uses the graduate's own dates, or the programme dates from config.
+    // One small block per programme week: done, this week, still to come.
+    function weekStrip(pl) {
+      var n = pl.totalWeeks, now = pl.status === "during" ? pl.week : pl.status === "after" ? n + 1 : 0;
+      var done = Math.min(n, Math.max(0, now - (pl.status === "during" ? 1 : 0)));
+      var ul = el("ul", { class: "weekstrip" + (n > 20 ? " dense" : ""), role: "img", "aria-label": pl.status === "during" ? "Week " + pl.week + " of " + n + ": " + done + " finished, this week in progress, " + (n - pl.week) + " still to come" : pl.status === "after" ? "All " + n + " weeks finished" : "Programme not started: " + n + " weeks to come" });
+      for (var i = 1; i <= n; i++) ul.appendChild(el("li", { class: i < now ? "done" : i === now ? "now" : "", text: String(i) }));
+      return ul;
+    }
+
     function programmePanel() {
       var pl = S.programme();
       var sec = Hub.panel("Programme progress", "programme");
@@ -61,6 +70,7 @@
         sec.appendChild(el("p", { class: "big", text: "Programme complete \u00B7 100%" }));
       }
       sec.appendChild(Hub.progress(pl.pct, "Programme progress"));
+      sec.appendChild(weekStrip(pl));
       sec.appendChild(el("p", { class: "muted", text: dates + (pl.status === "after" ? ". Well done!" : "") + (pl.own ? "" : " (programme dates; you can enter your own dates in your profile)") }));
       return sec;
     }

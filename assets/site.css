@@ -92,7 +92,7 @@ p { margin: 0 0 9px; }
 .badge-danger { background: #4a1a22; color: #ffc9d1; }
 .badge-info { background: var(--brand-tint); color: var(--text); }
 .bar { height: 8px; background: var(--bg); border: 1px solid var(--field-border); border-radius: 999px; overflow: hidden; }
-.bar-fill { height: 100%; background: var(--brand); }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #3f7fe8, var(--brand) 70%, #9cc3ff); border-radius: 999px; box-shadow: 0 0 8px rgba(110, 168, 255, .45); }
 .big { font-size: 1.25rem; font-weight: 700; margin: 0 0 4px; line-height: 1.2; }
 .count { font-weight: 700; margin: 2px 0 5px; }
 .covers-label { font-size: .86rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 3px; }
@@ -114,8 +114,10 @@ footer.site p { margin: 0; }
 main section[id] { scroll-margin-top: 56px; }
 
 /* panels (the building block of the home page) */
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 13px; margin: 0 0 10px; }
-.panel > h2, .panel > .panel-head { margin: 0 0 6px; font-size: .98rem; }
+.panel { background: linear-gradient(180deg, #172c5b 0, var(--surface) 70px); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 13px; margin: 0 0 10px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 2px 8px rgba(0, 0, 0, .28); }
+.panel > h2, .panel > .panel-head { margin: 0 0 6px; font-size: .98rem; display: flex; align-items: center; gap: 8px; }
+.panel > h2::before { content: ""; flex: none; width: 4px; height: 1.05em; border-radius: 2px; background: linear-gradient(180deg, #9cc3ff, #3f7fe8); }
+.panel.programme > h2::before, .panel.profile-card > h2::before { display: none; }
 .panel.setup { max-width: 640px; }
 .panel-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 700; color: inherit; text-align: left; cursor: pointer; }
 .panel-toggle .chev { width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 4px 3px 0; flex: none; transition: transform .15s; }
@@ -130,13 +132,22 @@ main section[id] { scroll-margin-top: 56px; }
 .grid.two > .panel { margin: 0; }
 
 /* programme progress bar: the first thing on My profile */
-.programme { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "label label" "big dates" "bar bar"; column-gap: 14px; align-items: baseline; border-color: var(--brand); border-width: 2px; margin-top: 2px; }
+.programme { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "label label" "big dates" "bar bar" "strip strip"; column-gap: 14px; align-items: baseline; border-color: var(--brand); border-width: 2px; margin-top: 2px; }
 .programme > h2 { grid-area: label; font-size: .87rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 1px; }
 .programme .big { grid-area: big; font-size: 1.45rem; margin: 0 0 6px; }
 .programme .muted { grid-area: dates; margin: 0; font-size: .93rem; text-align: right; }
 .programme .bar { grid-area: bar; height: 13px; }
+.programme .bar-fill { background: linear-gradient(90deg, #3f7fe8, #6ea8ff 60%, #b7d4ff); }
+.weekstrip { grid-area: strip; display: flex; gap: 3px; margin: 7px 0 0; padding: 0; list-style: none; }
+.weekstrip li { flex: 1 1 0; min-width: 0; text-align: center; font-size: .86rem; line-height: 1; color: var(--muted); }
+.weekstrip li::before { content: ""; display: block; height: 7px; border-radius: 2px; margin-bottom: 4px; border: 1.5px solid var(--field-border); box-sizing: border-box; }
+.weekstrip li.done { color: var(--text); }
+.weekstrip li.done::before { background: var(--brand); border-color: var(--brand); }
+.weekstrip li.now { color: var(--text); font-weight: 700; }
+.weekstrip li.now::before { background: #fff; border-color: #fff; box-shadow: 0 0 0 2px var(--brand), 0 0 8px rgba(156, 195, 255, .7); }
+.weekstrip.dense li { font-size: 0; }
 .programme .notice { grid-column: 1 / -1; margin: 0; }
-@media (max-width: 600px) { .programme { grid-template-columns: 1fr; grid-template-areas: "label" "big" "bar" "dates"; } .programme .muted { text-align: left; margin-top: 5px; } .programme .big { font-size: 1.3rem; } }
+@media (max-width: 600px) { .programme { grid-template-columns: 1fr; grid-template-areas: "label" "big" "bar" "strip" "dates"; } .programme .muted { text-align: left; margin-top: 5px; } .programme .big { font-size: 1.3rem; } }
 
 /* profile strip */
 .profile-card { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 7px 13px; }
@@ -262,7 +273,10 @@ main { overflow-wrap: anywhere; }
   .panel-body[hidden] { display: block !important; }
   a { color: #000; text-decoration: underline; }
   .bar { border-color: #555; }
-  .bar-fill { background: #555; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .panel { box-shadow: none; background-image: none; }
+  .panel > h2::before { display: none; }
+  .weekstrip li.done::before, .weekstrip li.now::before { background: #555; border-color: #555; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .bar-fill { background: #555; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .badge { border: 1px solid #555; background: #fff; color: #000; }
   .print-only { display: block; }
 }
