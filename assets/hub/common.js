@@ -300,6 +300,24 @@
     return out;
   };
 
+  // Makes a panel's heading a button that shows or hides the rest of the panel. start: "open" (default),
+  // "closed", or "closed-on-phone" (open on a laptop, folded on a small screen to save scrolling).
+  Hub.collapsible = function (sec, opts) {
+    opts = opts || {};
+    var h = sec.heading, body = el("div", { class: "panel-body", id: nextId("pb-") });
+    while (h.nextSibling) body.appendChild(h.nextSibling);
+    sec.appendChild(body);
+    var btn = el("button", { type: "button", class: "panel-toggle", "aria-controls": body.id });
+    btn.appendChild(el("span", { text: h.textContent }));
+    btn.appendChild(el("span", { class: "chev", "aria-hidden": "true" }));
+    h.textContent = ""; h.appendChild(btn);
+    function set(open) { btn.setAttribute("aria-expanded", String(open)); body.hidden = !open; sec.classList.toggle("is-collapsed", !open); }
+    var phone = !!(window.matchMedia && window.matchMedia("(max-width: 700px)").matches), start = opts.start || "open";
+    set(start === "open" ? true : start === "closed" ? false : !phone);
+    btn.addEventListener("click", function () { set(body.hidden); });
+    return sec;
+  };
+
   // Library of company links (from src/data/links.js) plus the graduate's own links.
   Hub.allLinks = function () {
     var base = ((window.SITE_LINKS || {}).items || []).map(function (l) { return { id: l.id, name: l.name, category: l.category, description: l.description, url: S.safeUrl(l.url), custom: false }; });

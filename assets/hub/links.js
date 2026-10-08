@@ -96,7 +96,7 @@
       var pinned = Hub.allLinks().filter(function (l) { return isPinned(l.id); });
       pinnedHost.appendChild(el("h2", { text: "Pinned" }));
       if (!pinned.length) pinnedHost.appendChild(el("p", { text: "Nothing pinned yet. Pin the links you use most and they will also appear on My profile." }));
-      else pinned.filter(matches).forEach(function (l) { pinnedHost.appendChild(card(l)); });
+      else { var pc = el("div", { class: "cols" }); pinned.filter(matches).forEach(function (l) { pc.appendChild(card(l)); }); pinnedHost.appendChild(pc); }
       var cats = {};
       all.forEach(function (l) { (cats[l.category] = cats[l.category] || []).push(l); });
       var names = Object.keys(cats);
@@ -105,7 +105,9 @@
       names.sort(function (a, b) { var x = order.indexOf(a), y = order.indexOf(b); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y); });
       names.forEach(function (n) {
         allHost.appendChild(el("h2", { text: n }));
-        cats[n].forEach(function (l) { allHost.appendChild(card(l)); });
+        var cc = el("div", { class: "cols" });
+        cats[n].forEach(function (l) { cc.appendChild(card(l)); });
+        allHost.appendChild(cc);
       });
     }
 

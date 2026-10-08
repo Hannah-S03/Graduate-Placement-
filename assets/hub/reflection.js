@@ -83,6 +83,8 @@
       var weeks = Object.keys(S.state.reflections).map(Number).sort(function (a, b) { return b - a; });
       listHost.appendChild(el("h2", { text: "Your reflections" }));
       if (!weeks.length) { listHost.appendChild(el("p", { text: "Nothing written yet. Choose a week above to start." })); return; }
+      var rcols = el("div", { class: "cols" });
+      listHost.appendChild(rcols);
       weeks.forEach(function (n) {
         var r = S.state.reflections[String(n)];
         var card = el("article", { class: "item" });
@@ -94,7 +96,7 @@
         var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit week " + n + " reflection" });
         ed.addEventListener("click", function () { selected = n; renderGrid(); renderForm(); var h = formHost.querySelector("h2"); if (h) Hub.focus(h); });
         card.appendChild(el("div", { class: "actions" }, [ed]));
-        listHost.appendChild(card);
+        rcols.appendChild(card);
       });
     }
 

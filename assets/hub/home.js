@@ -75,7 +75,7 @@
           Hub.save(status, "Weekly goal added."); render(".weekly-add input"); Hub.changed(render);
         }
       });
-      form.classList.add("weekly-add");
+      form.classList.add("weekly-add", "inline");
       body.appendChild(form);
 
       if (cw.week > 1) {
@@ -110,10 +110,10 @@
       var trDone = tr.filter(function (x) { return Hub.trainingStatus(x) === "complete"; }).length;
       var items = [
         ["Weekly goals", goals.length ? done + " of " + goals.length + " done" : "none set yet"],
-        ["Reflection for week " + cw.week, S.state.reflections[String(cw.week)] ? "written" : "not written yet"],
+        ["Reflection", S.state.reflections[String(cw.week)] ? "written" : "not written yet"],
         ["Overall progress", sum.overall === null ? "nothing added yet" : sum.overall + "%"],
-        ["Required training", trDone + " of " + tr.length + " complete"],
-        ["Achievements recorded", String(S.state.achievements.length)]
+        ["Training", trDone + " of " + tr.length + " complete"],
+        ["Achievements", String(S.state.achievements.length)]
       ];
       var ul = el("ul", { class: "plain facts-list" });
       items.forEach(function (i) { ul.appendChild(el("li", {}, [el("span", { class: "muted", text: i[0] + ": " }), el("strong", { text: i[1] })])); });
@@ -126,7 +126,7 @@
       var form = Hub.form({
         fields: [
           { name: "mood", label: "How is this week going?", type: "select", required: true, options: MOODS, validate: function (v) { return v === "0" ? "Choose how this week is going." : ""; } },
-          { name: "note", label: "A short note", type: "textarea", rows: 3, maxlength: 280, hint: "Up to 280 characters: a win, a worry or something you need." }
+          { name: "note", label: "A short note", type: "textarea", rows: 2, maxlength: 280, hint: "Up to 280 characters." }
         ],
         values: { mood: up ? String(up.mood) : "0", note: up ? up.note : "" },
         submitLabel: up ? "Update my update" : "Save my update",
@@ -137,27 +137,28 @@
         }
       });
       if (up && up.updated) formHost.appendChild(el("p", { class: "muted", text: "Last saved " + Hub.fmtDate(up.updated) + ": " + (moodLabel(up.mood) || "no rating") + "." }));
+      form.querySelector(".row").appendChild(copyBtn);
       formHost.appendChild(form);
     }
 
+    var box = el("div");
+    var copyBtn = el("button", { type: "button", class: "btn secondary", text: "Copy my update" });
+    copyBtn.addEventListener("click", function () {
+      var text = Hub.updateText();
+      function fallback() {
+        box.textContent = "";
+        var ta = el("textarea", { readonly: "readonly", rows: "8", "aria-label": "Your progress update, ready to copy" });
+        ta.value = text; box.appendChild(ta); ta.focus(); ta.select();
+        status.say("Your browser would not copy automatically. The text is selected below: press Ctrl + C to copy it.", true);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { box.textContent = ""; status.say("Your progress update was copied. Paste it into a message to your manager or mentor.", false); }, fallback);
+      else fallback();
+    });
+
     function renderCopy() {
       copyHost.textContent = "";
-      var btn = el("button", { type: "button", class: "btn secondary", text: "Copy my update" });
-      var box = el("div");
-      btn.addEventListener("click", function () {
-        var text = Hub.updateText();
-        function fallback() {
-          box.textContent = "";
-          var ta = el("textarea", { readonly: "readonly", rows: "8", "aria-label": "Your progress update, ready to copy" });
-          ta.value = text; box.appendChild(ta); ta.focus(); ta.select();
-          status.say("Your browser would not copy automatically. The text is selected below: press Ctrl + C to copy it.", true);
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { box.textContent = ""; status.say("Your progress update was copied. Paste it into a message to your manager or mentor.", false); }, fallback);
-        else fallback();
-      });
       var det = el("details", {}, [el("summary", { text: "Preview the text that will be copied" })]);
       det.appendChild(el("pre", { class: "update-text", text: Hub.updateText() }));
-      copyHost.appendChild(el("div", { class: "actions" }, [btn]));
       copyHost.appendChild(box);
       copyHost.appendChild(det);
     }
@@ -173,7 +174,7 @@
     var sec = Hub.panel("Calendar and upcoming events", "calendar");
     sec.id = "calendar";
     var addHost = el("div"), listHost = el("div");
-    var ui = { adding: false };
+    var ui = { adding: false, all: false };
     sec.appendChild(addHost); sec.appendChild(listHost);
 
     function icsEvent(i) { return { uid: i.id, date: i.date, time: i.time, minutes: i.minutes, title: i.title, description: i.desc, location: i.where }; }
@@ -204,9 +205,8 @@
 
     function renderList() {
       listHost.textContent = "";
-      var all = Hub.agenda(), shown = all.slice(0, 8);
+      var all = Hub.agenda(), LIMIT = 5, shown = ui.all ? all.slice(0, 40) : all.slice(0, LIMIT);
       if (!shown.length) { listHost.appendChild(el("p", { text: "Nothing coming up. Add a reminder, and programme events will appear here." })); return; }
-      listHost.appendChild(el("p", { class: "muted", text: "Showing the next " + shown.length + (all.length > shown.length ? " of " + all.length : "") + "." }));
       var ul = el("ul", { class: "agenda" });
       shown.forEach(function (i) {
         var label = Hub.dayLabel(i.date), relative = /^(Today|Tomorrow|In )/.test(label);
@@ -233,10 +233,15 @@
             var f = addHost.querySelector("button, input"); if (f) f.focus();
           } }));
         }
-        what.appendChild(actions);
-        ul.appendChild(el("li", {}, [when, what]));
+        ul.appendChild(el("li", {}, [when, what, actions]));
       });
       listHost.appendChild(ul);
+      var bar = el("div", { class: "panel-actions" });
+      if (all.length > LIMIT) {
+        var more = el("button", { type: "button", class: "btn small secondary", text: ui.all ? "Show fewer" : "Show all " + all.length + " upcoming" });
+        more.addEventListener("click", function () { ui.all = !ui.all; renderList(); var again = listHost.querySelector(".panel-actions button"); if (again) again.focus(); });
+        bar.appendChild(more);
+      }
       var withIcs = all.filter(function (i) { return i.ics; });
       if (withIcs.length) {
         var allBtn = el("button", { type: "button", class: "btn small secondary", text: "Add all upcoming events and reminders to my calendar" });
@@ -244,8 +249,9 @@
           Hub.download("upcoming-events.ics", Hub.buildIcs(withIcs.map(icsEvent)), "text/calendar");
           status.say("Calendar file downloaded with " + Hub.plural(withIcs.length, "event", "events") + ".", false);
         });
-        listHost.appendChild(el("div", { class: "actions" }, [allBtn]));
+        bar.appendChild(allBtn);
       }
+      listHost.appendChild(bar);
     }
     renderAdd(); renderList();
     return sec;

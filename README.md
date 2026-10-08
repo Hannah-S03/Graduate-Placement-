@@ -59,6 +59,10 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 4. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.
 
+## Changing the text size and spacing
+
+The base text size is the `font-size: 14.5px` line on the `html` rule near the top of `assets/site.css`. Make it larger (for example `16px`) for roomier text, or smaller for a tighter page. Almost everything scales from it. Panel spacing is set on the `.panel` rule, and the page width in `--max`.
+
 ## Changing the colours
 
 All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. Keep light text on dark backgrounds readable (aim for good contrast).

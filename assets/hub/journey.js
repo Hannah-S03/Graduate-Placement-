@@ -156,7 +156,9 @@
       });
       list.appendChild(el("h2", { text: "Your goals" }));
       if (!shown.length) { list.appendChild(el("p", { text: "No goals match these filters." })); return; }
-      shown.forEach(function (g) { list.appendChild(goalCard(g)); });
+      var wrap = el("div", { class: "cols" });
+      shown.forEach(function (g) { wrap.appendChild(goalCard(g)); });
+      list.appendChild(wrap);
     }
 
     function renderSuggest() {

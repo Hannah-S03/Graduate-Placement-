@@ -209,7 +209,9 @@
       if (!all.length) { listHost.appendChild(el("p", { text: "Nothing here yet. Add your first project or accomplishment, and keep adding as the scheme goes on." })); return; }
       var shown = all.filter(function (a) { return (ui.type === "all" || a.type === ui.type) && (ui.skill === "all" || a.skills.indexOf(ui.skill) !== -1); });
       if (!shown.length) { listHost.appendChild(el("p", { text: "No entries match these filters." })); return; }
-      shown.forEach(function (a) { listHost.appendChild(card(a)); });
+      var wrap = el("div", { class: "cols" });
+      shown.forEach(function (a) { wrap.appendChild(card(a)); });
+      listHost.appendChild(wrap);
     }
 
     function renderAll() { renderSummary(); renderRecord(); renderAdd(); renderFilters(); renderList(); }

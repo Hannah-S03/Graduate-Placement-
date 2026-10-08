@@ -75,7 +75,9 @@ Priority: **P0** required, **P1** should have, **P2** nice to have.
 | H9 | **Calendar and upcoming events**: the next 8 things coming up, soonest first, with "Today", "Tomorrow", "In 3 days" labels. It combines programme events (`src/data/events.js`), the graduate's own reminders (title, date, optional time, note; add and delete), training due dates, goal target dates, planned milestones and planned learning. **Add to calendar** for one event, or for all upcoming events and reminders, as a calendar file (.ics; timed events get a 1-hour alert, all-day events a 1-day alert) | P0 |
 | H10 | **Progress update**: an automatic summary (weekly goals done, this week's reflection, overall progress, training, achievements) plus "How is this week going?" (Struggling to Great) and a note of up to 280 characters, saved per week; **Copy my update** puts a ready-to-paste text on the clipboard (with a fallback box). Because managers cannot see hub data, this is how a graduate shares an update | P1 |
 
-**Order on the page:** programme progress bar, profile card, Weekly goals and Progress update (side by side), Calendar and upcoming events and Reminders (side by side), overall progress tracker, pinned links and next goals, latest achievements, My data.
+| H11 | **Compact layout:** a one-line profile strip; on a laptop the panels sit in **three columns** (weekly goals, progress update and reminders; the calendar double width beside the progress tracker; then pinned links, next goals and latest achievements); the calendar shows the next 5 items and reminders the top 5, each with a "Show all" option; **every panel heading folds and unfolds**, with My data folded everywhere and the lower panels folded on a phone | P1 |
+
+**Order on the page:** programme progress bar, profile card, Weekly goals, Progress update, Reminders, Calendar and upcoming events, progress tracker, pinned links, next goals, latest achievements, My data.
 
 ### 5.2 My journey `journey.html`
 | ID | Requirement | Priority |
@@ -164,6 +166,7 @@ Overall progress is the **average of the parts that have something in them**: go
 | Accessibility | WCAG 2.2 AA: keyboard operation, visible focus, a skip link, every control labelled, errors and saves announced politely to screen readers, no information by colour alone, reduced motion respected |
 | Colour | Dark blue theme; all text and link colour pairs checked at 4.5:1 or better (lowest measured 6.4:1) |
 | Responsive | Works from 320 px wide phones to desktop; long text wraps instead of scrolling sideways |
+| Density | Compact: base text 14.5 px (nothing visible under 12.4 px), tight spacing and 8 px corners. On a laptop the home page is about 1,400 px tall (it was about 3,700 px); on a phone the home page is about 2,400 px (it was about 5,800 px) because lower panels start folded. Buttons and fields are at least 30 px tall on phones, and form fields are 16 px there so phones do not zoom in |
 | Forms | Real labels, inline error messages, confirmations on the page (no pop-up alerts); delete and reset always ask first |
 | Print | Achievements page prints cleanly on a white background without menus or buttons |
 | Browsers | Latest two versions of Chrome, Safari, Edge and Firefox; iOS Safari and Android Chrome |

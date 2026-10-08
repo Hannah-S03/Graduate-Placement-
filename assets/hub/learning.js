@@ -26,6 +26,8 @@
       trainHost.appendChild(Hub.progress(tr.length ? (done / tr.length) * 100 : 0, "Required training complete"));
       var hasStart = !!S.state.profile.startDate;
       if (!hasStart) trainHost.appendChild(Hub.needStart());
+      var tcols = el("div", { class: "cols" });
+      trainHost.appendChild(tcols);
       tr.forEach(function (x) {
         var st = Hub.trainingStatus(x), rec = S.state.learning.training[x.id] || {};
         var due = Hub.trainingDue(x), badge = Hub.dueBadge(due, st === "complete");
@@ -54,7 +56,7 @@
         });
         actions.appendChild(cal);
         card.appendChild(actions);
-        trainHost.appendChild(card);
+        tcols.appendChild(card);
       });
       var all = el("button", { type: "button", class: "btn secondary", text: "Add all outstanding training to calendar" });
       if (!hasStart) all.disabled = true;
@@ -89,6 +91,8 @@
       var counts = { saved: 0, inprogress: 0, completed: 0 };
       items.forEach(function (i) { counts[i.rec.status]++; });
       savedHost.appendChild(el("p", { text: counts.saved + " saved \u00B7 " + counts.inprogress + " in progress \u00B7 " + counts.completed + " completed" }));
+      var scols = el("div", { class: "cols" });
+      savedHost.appendChild(scols);
       items.forEach(function (i) {
         var card = el("article", { class: "item", "data-id": i.id });
         var h = el("h3"); if (i.url) h.appendChild(Hub.link(i.url, i.title)); else h.appendChild(document.createTextNode(i.title));
@@ -118,7 +122,7 @@
           actions.appendChild(rm);
         }
         card.appendChild(actions);
-        savedHost.appendChild(card);
+        scols.appendChild(card);
       });
     }
 
@@ -133,6 +137,8 @@
       browseHost.appendChild(el("div", { class: "filters" }, [ft.wrap, fs.wrap]));
       var shown = LRN.catalogue.filter(function (c) { return (ui.type === "all" || c.type === ui.type) && (ui.skill === "all" || c.skill === ui.skill); });
       if (!shown.length) { browseHost.appendChild(el("p", { text: "Nothing matches these filters." })); return; }
+      var bcols = el("div", { class: "cols" });
+      browseHost.appendChild(bcols);
       shown.forEach(function (c) {
         var saved = !!S.state.learning.saved[c.id], url = S.safeUrl(c.url);
         var card = el("article", { class: "item", "data-id": "cat-" + c.id });
@@ -148,7 +154,7 @@
           var again = browseHost.querySelector('[data-id="cat-' + c.id + '"] button'); if (again) again.focus();
         });
         card.appendChild(el("div", { class: "actions" }, [b]));
-        browseHost.appendChild(card);
+        bcols.appendChild(card);
       });
     }
 

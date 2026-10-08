@@ -111,7 +111,7 @@
       }
       var list = S.state.milestones.slice().sort(function (a, b) { return (a.date || "9999") < (b.date || "9999") ? -1 : 1; });
       if (!list.length) { msHost.appendChild(el("p", { text: "No milestones yet." })); return; }
-      var wrap = el("div", { class: "timeline" });
+      var wrap = el("div", { class: "cols timeline" });
       list.forEach(function (m) { wrap.appendChild(msCard(m)); });
       msHost.appendChild(wrap);
     }

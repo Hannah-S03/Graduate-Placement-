@@ -94,17 +94,22 @@
 
     function remindersPanel() {
       var sec = Hub.panel("Reminders");
-      var host = el("div");
+      var host = el("div"), all = false;
       sec.appendChild(host);
       function refresh() {
         host.textContent = "";
         var items = Hub.reminders();
         if (!items.length) { host.appendChild(el("p", { text: "Nothing needs your attention right now." })); return; }
         var ul = el("ul", { class: "plain" });
-        items.slice(0, 8).forEach(function (r) {
+        (all ? items : items.slice(0, 5)).forEach(function (r) {
           ul.appendChild(el("li", {}, [Hub.badge(r.kind === "danger" ? "Overdue" : r.kind === "warn" ? "Soon" : "To do", r.kind), " ", el("a", { href: r.href, text: r.text })]));
         });
         host.appendChild(ul);
+        if (items.length > 5) {
+          var b = el("button", { type: "button", class: "btn small secondary", text: all ? "Show fewer" : "Show " + (items.length - 5) + " more" });
+          b.addEventListener("click", function () { all = !all; refresh(); var again = host.querySelector("button"); if (again) again.focus(); });
+          host.appendChild(el("div", { class: "panel-actions" }, [b]));
+        }
       }
       Hub.onChange("reminders", refresh);
       refresh();
@@ -116,12 +121,12 @@
       var pinned = S.state.links.pinned;
       var all = Hub.allLinks().filter(function (l) { return pinned.indexOf(l.id) !== -1; });
       if (!all.length) {
-        sec.appendChild(el("p", {}, ["You have not pinned any links yet. ", el("a", { href: "links.html", text: "Pin company systems and resources" }), "."]));
+        sec.appendChild(el("p", {}, ["Nothing pinned yet. ", el("a", { href: "links.html", text: "Pin company systems and resources" }), "."]));
         return sec;
       }
-      var ul = el("ul", { class: "plain" });
-      all.slice(0, 8).forEach(function (l) {
-        ul.appendChild(el("li", {}, [l.url ? Hub.link(l.url, l.name) : el("span", { text: l.name + " (link to be added)" })]));
+      var ul = el("ul", { class: "chips" });
+      all.slice(0, 10).forEach(function (l) {
+        ul.appendChild(el("li", {}, [l.url ? Hub.link(l.url, l.name, "chip") : el("span", { class: "chip", text: l.name + " (link to be added)" })]));
       });
       sec.appendChild(ul);
       sec.appendChild(el("p", {}, [el("a", { href: "links.html", text: "All quick links" })]));
@@ -146,7 +151,7 @@
 
     function achievementsPanel() {
       var sec = Hub.panel("Latest achievements");
-      var list = S.state.achievements.slice().sort(function (a, b) { return (a.date || "") < (b.date || "") ? 1 : -1; }).slice(0, 3);
+      var list = S.state.achievements.slice().sort(function (a, b) { return (a.date || "") < (b.date || "") ? 1 : -1; }).slice(0, 2);
       if (!list.length) { sec.appendChild(el("p", {}, ["Nothing recorded yet. ", el("a", { href: "achievements.html", text: "Add a project or accomplishment" }), "."])); return sec; }
       var ul = el("ul", { class: "plain" });
       list.forEach(function (a) { ul.appendChild(el("li", {}, [el("strong", { text: a.title }), el("span", { class: "muted", text: a.date ? " · " + Hub.fmtDate(a.date) : "" })])); });
@@ -156,12 +161,14 @@
 
     function dataPanel() {
       var sec = Hub.panel("My data");
+      var local = Hub.status();
       sec.appendChild(el("p", { text: "Everything you enter is saved only in this browser on this device. Download a copy now and then so you can restore it if browser data is cleared, or load it on another device." }));
+      sec.appendChild(local);
       var row = el("div", { class: "row" });
       var dl = el("button", { type: "button", class: "btn", text: "Download my data" });
       dl.addEventListener("click", function () {
         Hub.download("graduate-hub-" + S.today() + ".json", S.exportJSON(), "application/json");
-        status.say("Your data was downloaded as a file.", false);
+        local.say("Your data was downloaded as a file.", false);
       });
       row.appendChild(dl);
       sec.appendChild(row);
@@ -183,14 +190,14 @@
           yes.addEventListener("click", function () {
             var res = S.importJSON(text);
             if (res.ok) { status.say("Your data was restored from the file.", false); editing = false; render(); }
-            else { confirmBox.textContent = ""; status.say(res.error, true); fileInput.value = ""; }
+            else { confirmBox.textContent = ""; local.say(res.error, true); fileInput.value = ""; }
           });
           no.addEventListener("click", function () { confirmBox.textContent = ""; fileInput.value = ""; fileInput.focus(); });
           confirmBox.appendChild(el("span", { class: "confirm-text", text: "This replaces everything currently in the hub. Continue?" }));
           confirmBox.appendChild(yes); confirmBox.appendChild(no);
           yes.focus();
         };
-        reader.onerror = function () { status.say("That file could not be read.", true); };
+        reader.onerror = function () { local.say("That file could not be read.", true); };
         reader.readAsText(file);
       });
       restoreBox.appendChild(fileInput);
@@ -220,20 +227,20 @@
       edit.addEventListener("click", function () { editing = true; render(); });
       card.appendChild(edit);
       body.appendChild(card);
-      var thisWeek = el("div", { class: "grid two" });
-      thisWeek.appendChild(Hub.homePanels.weekly(status));
-      thisWeek.appendChild(Hub.homePanels.update(status));
-      body.appendChild(thisWeek);
-      var cal = el("div", { class: "grid two" });
-      cal.appendChild(Hub.homePanels.calendar(status));
-      cal.appendChild(remindersPanel());
-      body.appendChild(cal);
-      body.appendChild(progressPanel());
-      var two = el("div", { class: "grid two" });
-      two.appendChild(pinnedPanel()); two.appendChild(goalsPanel());
-      body.appendChild(two);
-      body.appendChild(achievementsPanel());
-      body.appendChild(dataPanel());
+      var grid = el("div", { class: "home-grid" });
+      function add(sec, start, cls) { Hub.collapsible(sec, { start: start }); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
+      add(Hub.homePanels.weekly(status), "open");
+      add(Hub.homePanels.update(status), "closed-on-phone");
+      add(remindersPanel(), "open");
+      add(Hub.homePanels.calendar(status), "open", "span-2");
+      add(progressPanel(), "closed-on-phone");
+      add(pinnedPanel(), "closed-on-phone");
+      add(goalsPanel(), "closed-on-phone");
+      add(achievementsPanel(), "closed-on-phone");
+      body.appendChild(grid);
+      var data = dataPanel();
+      Hub.collapsible(data, { start: "closed" });
+      body.appendChild(data);
     }
 
     function render() {
