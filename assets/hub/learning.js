@@ -6,23 +6,6 @@
   var STATUS = [{ value: "saved", label: "Saved" }, { value: "inprogress", label: "In progress" }, { value: "completed", label: "Completed" }];
   var TSTATUS = [{ value: "notstarted", label: "Not started" }, { value: "inprogress", label: "In progress" }, { value: "complete", label: "Complete" }];
 
-  // ----- calendar file (.ics) -----
-  function icsEscape(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
-  function fold(line) { var out = [], l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = " " + l.slice(74); } out.push(l); return out.join("\r\n"); }
-  function stamp() { return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
-  // events: [{ uid, date: "YYYY-MM-DD", title, description }] -> all-day events with an alert 3 days before.
-  Hub.buildIcs = function (events) {
-    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Graduate Hub//EN", "CALSCALE:GREGORIAN"];
-    events.forEach(function (e) {
-      lines.push("BEGIN:VEVENT", "UID:" + e.uid + "@graduate-hub", "DTSTAMP:" + stamp(),
-        "DTSTART;VALUE=DATE:" + e.date.replace(/-/g, ""), "DTEND;VALUE=DATE:" + S.addDays(e.date, 1).replace(/-/g, ""),
-        "SUMMARY:" + icsEscape(e.title), "DESCRIPTION:" + icsEscape(e.description || ""),
-        "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(e.title), "TRIGGER:-P3D", "END:VALARM", "END:VEVENT");
-    });
-    lines.push("END:VCALENDAR");
-    return lines.map(fold).join("\r\n") + "\r\n";
-  };
-
   R.learning = function (t) {
     var status = Hub.status();
     var trainHost = el("div"), savedHost = el("div"), browseHost = el("div"), customHost = el("div");
@@ -32,7 +15,7 @@
 
     // ----- required training -----
     function trainingEvent(tr) {
-      return { uid: tr.id, date: Hub.trainingDue(tr), title: "Required training due: " + tr.title, description: tr.description + " (Graduate Hub reminder)" };
+      return { uid: tr.id, date: Hub.trainingDue(tr), title: "Required training due: " + tr.title, description: tr.description + " (Graduate Hub reminder)", alert: "-P3D" };
     }
     function renderTraining() {
       trainHost.textContent = "";

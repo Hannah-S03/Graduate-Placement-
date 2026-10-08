@@ -152,6 +152,7 @@
         if (type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return "Enter a valid email address.";
         if (type === "url" && !S.safeUrl(v)) return "Enter a full web address starting with http:// or https://";
         if (type === "date" && !S.dateStr(v)) return "Enter a valid date.";
+        if (type === "time" && !/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) return "Enter a valid time, for example 14:30.";
         if (def.validate) return def.validate(v) || "";
         return "";
       }
@@ -283,15 +284,14 @@
       if (d < 0) out.push({ level: 0, kind: "danger", text: "Milestone “" + m.title + "” is past its date (" + Hub.fmtDate(m.date) + ").", href: "development.html" });
       else if (d <= 14) out.push({ level: 2, kind: "warn", text: "Milestone “" + m.title + "” is on " + Hub.fmtDate(m.date) + ".", href: "development.html" });
     });
-    var cat = ((window.SITE_LEARNING || {}).catalogue || []);
-    var planned = Object.keys(st.learning.saved).map(function (id) {
-      var rec = st.learning.saved[id], item = cat.filter(function (c) { return c.id === id; })[0];
-      return item ? { title: item.title, planned: rec.planned, status: rec.status } : null;
-    }).filter(Boolean).concat(st.learning.custom.map(function (c) { return { title: c.title, planned: c.planned, status: c.status }; }));
-    planned.forEach(function (p) {
+    Hub.plannedLearning().forEach(function (p) {
       if (p.status === "completed" || !p.planned) return;
       var d = S.daysBetween(today, p.planned);
       if (d >= 0 && d <= 7) out.push({ level: 2, kind: "warn", text: "Planned learning \u201C" + p.title + "\u201D is " + (d === 0 ? "today" : "in " + Hub.plural(d, "day", "days")) + ".", href: "learning.html" });
+    });
+    st.calendar.forEach(function (c) {
+      var d = S.daysBetween(today, c.date);
+      if (d === 0 || d === 1) out.push({ level: 1, kind: "warn", text: "Reminder: " + c.title + " is " + (d === 0 ? "today" : "tomorrow") + (c.time ? " at " + c.time : "") + ".", href: "index.html#calendar" });
     });
     if (pl.status === "during" && !st.reflections[String(pl.week)]) {
       out.push({ level: 3, kind: "info", text: "Write your reflection for week " + pl.week + ".", href: "reflection.html" });
@@ -312,6 +312,87 @@
     sec.appendChild(h);
     sec.heading = h;
     return sec;
+  };
+
+  // Saved or custom learning that has a planned date, with its title.
+  Hub.plannedLearning = function () {
+    var st = S.state, cat = ((window.SITE_LEARNING || {}).catalogue || []);
+    return Object.keys(st.learning.saved).map(function (id) {
+      var rec = st.learning.saved[id], item = cat.filter(function (c) { return c.id === id; })[0];
+      return item ? { title: item.title, planned: rec.planned, status: rec.status } : null;
+    }).filter(Boolean).concat(st.learning.custom.map(function (c) { return { title: c.title, planned: c.planned, status: c.status }; }));
+  };
+
+  // The week the weekly goals and progress update belong to: this week during the programme, week 1 before it, the last week after it.
+  Hub.currentWeek = function () {
+    var pl = S.programme();
+    return { week: pl.status === "during" ? pl.week : pl.status === "after" ? pl.totalWeeks : 1, pl: pl };
+  };
+
+  // Tells other home page panels to refresh after one panel saves something (the panel that saved is skipped,
+  // so it keeps keyboard focus).
+  var listeners = [];
+  Hub.onChange = function (owner, fn) { listeners.push({ owner: owner, fn: fn }); };
+  Hub.clearListeners = function () { listeners = []; };
+  Hub.changed = function (owner) { listeners.slice().forEach(function (l) { if (l.owner !== owner) l.fn(); }); };
+
+  // "Today", "Tomorrow", "In 3 days", otherwise "Thu 15 Oct".
+  Hub.dayLabel = function (date) {
+    var d = S.daysBetween(S.today(), date);
+    if (d === 0) return "Today";
+    if (d === 1) return "Tomorrow";
+    if (d > 1 && d < 7) return "In " + d + " days";
+    return S.parseDate(date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  };
+
+  // Everything coming up (today or later), soonest first: programme events, the graduate's own reminders,
+  // training due dates, goal target dates, planned milestones and planned learning. ics: true = can go in a calendar file.
+  Hub.agenda = function (limit) {
+    var st = S.state, today = S.today(), items = [];
+    ((window.SITE_EVENTS) || []).forEach(function (e) {
+      if (S.dateStr(e.date) && e.date >= today) items.push({ id: "ev-" + e.id, kind: "Programme event", title: e.title, date: e.date, time: e.time || "", minutes: e.minutes, where: e.where || "", desc: e.description || "", ics: true });
+    });
+    st.calendar.forEach(function (c) {
+      if (c.date >= today) items.push({ id: c.id, kind: "My reminder", title: c.title, date: c.date, time: c.time, where: "", desc: c.note, ics: true, mine: true });
+    });
+    Hub.training().forEach(function (t) {
+      if (Hub.trainingStatus(t) === "complete") return;
+      var due = Hub.trainingDue(t);
+      if (due && due >= today) items.push({ id: "tr-" + t.id, kind: "Training due", title: t.title + " training", date: due, time: "", href: "learning.html" });
+    });
+    st.goals.forEach(function (g) { if (g.progress < 100 && g.target && g.target >= today) items.push({ id: "g-" + g.id, kind: "Goal due", title: g.title, date: g.target, time: "", href: "journey.html" }); });
+    st.milestones.forEach(function (m) { if (m.status !== "achieved" && m.date && m.date >= today) items.push({ id: "m-" + m.id, kind: "Milestone", title: m.title, date: m.date, time: "", href: "development.html" }); });
+    Hub.plannedLearning().forEach(function (p, i) { if (p.status !== "completed" && p.planned && p.planned >= today) items.push({ id: "l-" + i, kind: "Learning", title: p.title, date: p.planned, time: "", href: "learning.html" }); });
+    items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || "") < (b.time || "") ? -1 : (a.time || "") > (b.time || "") ? 1 : a.title < b.title ? -1 : 1; });
+    return limit ? items.slice(0, limit) : items;
+  };
+
+  // ----- calendar files (.ics) -----
+  function icsEscape(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
+  function fold(line) { var out = [], l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = " " + l.slice(74); } out.push(l); return out.join("\r\n"); }
+  function stamp() { return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  // events: [{ uid, date: "YYYY-MM-DD", time?: "HH:MM", minutes?, title, description?, location?, alert? }].
+  // Without a time the event is all day. alert is an ICS duration such as "-P3D"; default 1 day before (all day) or 1 hour before.
+  Hub.buildIcs = function (events) {
+    var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Graduate Hub//EN", "CALSCALE:GREGORIAN"];
+    events.forEach(function (e) {
+      var timed = /^([01]\d|2[0-3]):[0-5]\d$/.test(e.time || "");
+      lines.push("BEGIN:VEVENT", "UID:" + e.uid + "@graduate-hub", "DTSTAMP:" + stamp());
+      if (timed) {
+        var p = S.parseDate(e.date), end = new Date(p.getFullYear(), p.getMonth(), p.getDate(), parseInt(e.time.slice(0, 2), 10), parseInt(e.time.slice(3), 10) + (e.minutes || 60));
+        lines.push("DTSTART:" + e.date.replace(/-/g, "") + "T" + e.time.replace(":", "") + "00",
+          "DTEND:" + end.getFullYear() + pad(end.getMonth() + 1) + pad(end.getDate()) + "T" + pad(end.getHours()) + pad(end.getMinutes()) + "00");
+      } else {
+        lines.push("DTSTART;VALUE=DATE:" + e.date.replace(/-/g, ""), "DTEND;VALUE=DATE:" + S.addDays(e.date, 1).replace(/-/g, ""));
+      }
+      lines.push("SUMMARY:" + icsEscape(e.title));
+      if (e.location) lines.push("LOCATION:" + icsEscape(e.location));
+      lines.push("DESCRIPTION:" + icsEscape(e.description || ""),
+        "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(e.title), "TRIGGER:" + (e.alert || (timed ? "-PT1H" : "-P1D")), "END:VALARM", "END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return lines.map(fold).join("\r\n") + "\r\n";
   };
 
   window.Hub = Hub;

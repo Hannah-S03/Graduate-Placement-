@@ -68,9 +68,14 @@ Priority: **P0** required, **P1** should have, **P2** nice to have.
 | H2 | Profile card with initials avatar and an edit option | P0 |
 | H3 | **Programme progress bar as the first thing on the page** (directly under the heading, visible before any setup): "Week 6 of 12 · 50% through", with the start and end dates; "Starts in N days" before the start; "Programme complete · 100%" after the end. It uses the graduate's own dates once entered, otherwise the programme dates (1 Sept to 20 Nov 2026) | P0 |
 | H4 | **Overall progress tracker** with separate bars for goals, milestones and required training, and an explanation of how it is worked out (section 6) | P0 |
-| H5 | **Reminders**: overdue or due-soon training, goals and milestones nearly due, planned learning in the next 7 days, and this week's reflection | P0 |
+| H5 | **Reminders**: overdue or due-soon training, goals and milestones nearly due, planned learning in the next 7 days, the graduate's own reminders due today or tomorrow, and this week's reflection | P0 |
 | H6 | Pinned links, next goals and latest achievements | P1 |
 | H7 | **My data**: Download my data (JSON file), Restore from a file (validated, with confirmation), Reset everything (with confirmation) | P0 |
+| H8 | **Weekly goals** for the current week: add, tick done, remove; "n of m done" with a bar; bring forward unfinished goals from the previous week; each week keeps its own list. Plans week 1 before the programme starts and shows the final week after it ends | P0 |
+| H9 | **Calendar and upcoming events**: the next 8 things coming up, soonest first, with "Today", "Tomorrow", "In 3 days" labels. It combines programme events (`src/data/events.js`), the graduate's own reminders (title, date, optional time, note; add and delete), training due dates, goal target dates, planned milestones and planned learning. **Add to calendar** for one event, or for all upcoming events and reminders, as a calendar file (.ics; timed events get a 1-hour alert, all-day events a 1-day alert) | P0 |
+| H10 | **Progress update**: an automatic summary (weekly goals done, this week's reflection, overall progress, training, achievements) plus "How is this week going?" (Struggling to Great) and a note of up to 280 characters, saved per week; **Copy my update** puts a ready-to-paste text on the clipboard (with a fallback box). Because managers cannot see hub data, this is how a graduate shares an update | P1 |
+
+**Order on the page:** programme progress bar, profile card, Weekly goals and Progress update (side by side), Calendar and upcoming events and Reminders (side by side), overall progress tracker, pinned links and next goals, latest achievements, My data.
 
 ### 5.2 My journey `journey.html`
 | ID | Requirement | Priority |
@@ -139,11 +144,11 @@ Overall progress is the **average of the parts that have something in them**: go
 
 ## 7. Data and storage
 
-- All information is stored in the browser's local storage under one key (`gradHub.v1`) as JSON: profile, goals (with progress history), milestones, skill ratings, pinned and custom links, saved and custom learning, training status, contacts, weekly reflections and achievements.
+- All information is stored in the browser's local storage under one key (`gradHub.v1`) as JSON: profile, goals (with progress history), milestones, skill ratings, pinned and custom links, saved and custom learning, training status, contacts, weekly reflections, achievements, **weekly goals, the graduate's own calendar reminders and weekly progress updates**. Older saved data without the newest parts still loads.
 - **Limits graduates are told about:** it stays on that browser and device; it does not follow them to another device; clearing browser data can delete it; managers and the programme team cannot see it.
 - **Backup:** Download my data and Restore from a file. Restoring validates the file and asks for confirmation first; a wrong or corrupted file is rejected without changing anything.
 - **Resilience:** if saving is blocked, every page still works and shows a notice. If stored data cannot be read, a copy is kept under a backup key and the hub starts fresh with a notice.
-- Everything a user types is displayed as plain text. Links accept only `http` and `https` addresses. Text fields are length-limited.
+- Everything a user types is displayed as plain text. Links accept only `http` and `https` addresses. Text fields are length-limited, and restored files are cleaned (invalid weeks, dates and times dropped; lists capped).
 
 ## 8. Privacy and security
 
@@ -175,7 +180,7 @@ Static site: plain HTML, CSS and JavaScript, no build step or server.
 | `assets/store.js` | The storage module: load, save, validate, back up, restore, reset, date and week helpers |
 | `assets/hub/*.js` | `common.js` (forms, progress, reminders) and one script per section |
 | `src/config.js` | Names, programme start and end dates (the progress bar), contact email, dummy-data banner switch |
-| `src/data/*.js` | Content: company, team, feedback, overview, content, placement, links, learning, networks |
+| `src/data/*.js` | Content: company, team, feedback, overview, content, placement, links, learning, networks, **events** (programme events for the calendar) |
 
 **Run locally:** `python -m http.server 8000` in the project folder (Windows) or `python3 ...` (Mac/Linux), then open `http://localhost:8000`. See `README.md`. **Public hosting later:** deploy the same files to a static host with HTTPS (and an access restriction if it should be internal only).
 
@@ -198,18 +203,18 @@ Static site: plain HTML, CSS and JavaScript, no build step or server.
 | Shared or managed computers expose or wipe data | Privacy notice guidance; confirm how graduates' devices are managed |
 | Managers expect to see progress | Explain plainly that the hub is private; scope manager views as a separate project |
 | Dummy content published by mistake | Banner on every page; checklist in README |
-| Reminders are in-page only | Calendar files for training; consider email reminders in a later version |
+| Reminders are in-page only | Calendar files (.ics) for training, events and personal reminders put alerts in the graduate's own calendar; consider email reminders in a later version |
 | Content goes stale (links, training, contacts) | Name a content owner; content is plain data files |
 
 ## 13. Out of scope for this version
 Sign-in, shared or manager views, notifications, syncing across devices, file uploads.
 
 ## 14. Dummy content to replace
-Company details, the central team and areas, people and key contacts, graduate quotes, the skills overview wording, placement details and key moments, company links, required training and due-day rules, learning catalogue, networks and groups, FAQs, contact email.
+Company details, the central team and areas, people and key contacts, graduate quotes, the skills overview wording, placement details and key moments, **programme events (dates, times, places)**, company links, required training and due-day rules, learning catalogue, networks and groups, FAQs, contact email.
 
 ## 15. Open questions
 
-1. Real content to replace all dummy data (see section 14), and who owns keeping it up to date.
+1. Real content to replace all dummy data (see section 14), including the real programme events, and who owns keeping it up to date.
 2. Required training: the real list and due-day rules.
 3. Will graduates use shared or managed computers? (Browser-saved data is per browser and could be cleared by IT policy.)
 4. Will managers or the programme team later need to see progress? (That needs real accounts and a hosted backend, and data-protection review.)

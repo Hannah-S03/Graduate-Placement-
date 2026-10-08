@@ -94,13 +94,20 @@
 
     function remindersPanel() {
       var sec = Hub.panel("Reminders");
-      var items = Hub.reminders();
-      if (!items.length) { sec.appendChild(el("p", { text: "Nothing needs your attention right now." })); return sec; }
-      var ul = el("ul", { class: "plain" });
-      items.slice(0, 8).forEach(function (r) {
-        ul.appendChild(el("li", {}, [Hub.badge(r.kind === "danger" ? "Overdue" : r.kind === "warn" ? "Soon" : "To do", r.kind), " ", el("a", { href: r.href, text: r.text })]));
-      });
-      sec.appendChild(ul);
+      var host = el("div");
+      sec.appendChild(host);
+      function refresh() {
+        host.textContent = "";
+        var items = Hub.reminders();
+        if (!items.length) { host.appendChild(el("p", { text: "Nothing needs your attention right now." })); return; }
+        var ul = el("ul", { class: "plain" });
+        items.slice(0, 8).forEach(function (r) {
+          ul.appendChild(el("li", {}, [Hub.badge(r.kind === "danger" ? "Overdue" : r.kind === "warn" ? "Soon" : "To do", r.kind), " ", el("a", { href: r.href, text: r.text })]));
+        });
+        host.appendChild(ul);
+      }
+      Hub.onChange("reminders", refresh);
+      refresh();
       return sec;
     }
 
@@ -198,6 +205,7 @@
     }
 
     function dashboard() {
+      Hub.clearListeners();
       var p = S.state.profile;
       var card = Hub.panel(p.name, "profile-card");
       card.heading.setAttribute("tabindex", "-1");
@@ -212,8 +220,15 @@
       edit.addEventListener("click", function () { editing = true; render(); });
       card.appendChild(edit);
       body.appendChild(card);
+      var thisWeek = el("div", { class: "grid two" });
+      thisWeek.appendChild(Hub.homePanels.weekly(status));
+      thisWeek.appendChild(Hub.homePanels.update(status));
+      body.appendChild(thisWeek);
+      var cal = el("div", { class: "grid two" });
+      cal.appendChild(Hub.homePanels.calendar(status));
+      cal.appendChild(remindersPanel());
+      body.appendChild(cal);
       body.appendChild(progressPanel());
-      body.appendChild(remindersPanel());
       var two = el("div", { class: "grid two" });
       two.appendChild(pinnedPanel()); two.appendChild(goalsPanel());
       body.appendChild(two);

@@ -8,7 +8,7 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 
 | Page | What it does |
 |---|---|
-| **My profile** (home) | Set up a profile, see "Week X of 12", the overall progress tracker, reminders, pinned links, and back up or restore data |
+| **My profile** (home) | The programme progress bar, **weekly goals**, a small **progress update** (with a copy-to-share button), a **calendar of upcoming events and reminders** (with calendar files), overall progress, reminders, pinned links, and backup and restore |
 | **My journey** | Add development, career and placement goals and update their progress |
 | **My development** | Record milestones and rate skills at the start and now |
 | **Quick links** | Pin company systems and resources, and add your own |
@@ -49,12 +49,12 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
 | `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
 | `src/config.js` | Names, programme start and end dates, contact email, dummy-data banner switch |
-| `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
+| `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks`, `events` |
 
 ## Replacing the dummy content
 
 0. **Programme dates:** set `programmeStart` and `programmeEnd` in `src/config.js` (format `2026-09-01`). They drive the progress bar at the top of My profile and prefill each graduate's dates. The bar shows the current week out of the total weeks, so week 6 of 12 is 50%.
-1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date).
+1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date). In `events.js`, list the real programme events (`date` as `2026-10-15`, optional `time` as `14:00`, `minutes`, `where`, `description`); leave `time` out for an all-day event.
 2. Edit `src/config.js`: company name, contact email, placement length.
 3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 4. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.

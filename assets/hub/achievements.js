@@ -54,6 +54,23 @@
       if (a.learnt) L.push("What I learnt: " + a.learnt, "");
       if (a.evidence) L.push("Evidence: " + a.evidence, "");
     });
+    L.push("## Weekly goals", "");
+    var wgs = Object.keys(st.weeklyGoals).map(Number).sort(function (a, b) { return a - b; });
+    if (!wgs.length) L.push("None recorded.", "");
+    wgs.forEach(function (n) {
+      L.push("### Week " + n, "");
+      st.weeklyGoals[String(n)].forEach(function (g) { L.push("- [" + (g.done ? "x" : " ") + "] " + g.text); });
+      L.push("");
+    });
+    L.push("## Weekly progress updates", "");
+    var moods = ["", "Struggling", "Tough", "Okay", "Good", "Great"];
+    var ups = Object.keys(st.updates).map(Number).sort(function (a, b) { return a - b; });
+    if (!ups.length) L.push("None recorded.", "");
+    ups.forEach(function (n) {
+      var u = st.updates[String(n)];
+      L.push("- Week " + n + (u.updated ? " (" + Hub.fmtDate(u.updated) + ")" : "") + ": " + (moods[u.mood] || "no rating") + (u.note ? " – " + u.note : ""));
+    });
+    if (ups.length) L.push("");
     L.push("## Weekly reflections", "");
     var weeks = Object.keys(st.reflections).map(Number).sort(function (a, b) { return a - b; });
     if (!weeks.length) L.push("None recorded.");

@@ -88,7 +88,8 @@
       goals: [], milestones: [], skills: {},
       links: { pinned: [], custom: [] },
       learning: { saved: {}, custom: [], training: {} },
-      contacts: [], reflections: {}, achievements: []
+      contacts: [], reflections: {}, achievements: [],
+      weeklyGoals: {}, calendar: [], updates: {}
     };
   }
 
@@ -145,6 +146,22 @@
         did: str(a.did), impact: str(a.impact), evidence: safeUrl(a.evidence), learnt: str(a.learnt)
       };
     }).filter(function (a) { return a.title; });
+    if (isObj(raw.weeklyGoals)) Object.keys(raw.weeklyGoals).forEach(function (k) {
+      var n = parseInt(k, 10), list = raw.weeklyGoals[k];
+      if (!isFinite(n) || n < 1 || n > 52 || !Array.isArray(list)) return;
+      var goals = mapList(list, function (g) { return { id: idOf(g), text: str(g.text, 200).trim(), done: g.done === true }; }).filter(function (g) { return g.text; }).slice(0, 50);
+      if (goals.length) s.weeklyGoals[String(n)] = goals;
+    });
+    s.calendar = mapList(raw.calendar, function (c) {
+      var time = typeof c.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(c.time) ? c.time : "";
+      return { id: idOf(c), title: str(c.title, 200).trim(), date: dateStr(c.date), time: time, note: str(c.note, 1000) };
+    }).filter(function (c) { return c.title && c.date; }).slice(0, 500);
+    if (isObj(raw.updates)) Object.keys(raw.updates).forEach(function (k) {
+      var n = parseInt(k, 10), v = raw.updates[k];
+      if (!isFinite(n) || n < 1 || n > 52 || !isObj(v)) return;
+      var mood = Math.round(num(v.mood, 0, 5, 0));
+      if (mood >= 1 || str(v.note, 280).trim()) s.updates[String(n)] = { mood: mood, note: str(v.note, 280), updated: dateStr(v.updated) };
+    });
     return s;
   }
 
