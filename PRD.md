@@ -6,7 +6,7 @@
 | **Owner** | Hannah Sullivan |
 | **Last updated** | 2026-10-07 |
 
-> **About the dummy data.** The company, people, quotes, and week-by-week content in this document are **invented sample content** ("Brightpath Technologies" is fictional) so the layout can be reviewed. Replace all of it before launch. Never publish the sample names or quotes as real.
+> **About the dummy data.** The company, people, quotes, and 12-week overview content in this document are **invented sample content** ("Brightpath Technologies" is fictional) so the layout can be reviewed. Replace all of it before launch. Never publish the sample names or quotes as real.
 
 Items marked **[ASSUMPTION]** are unconfirmed. Open questions are in section 16.
 
@@ -14,14 +14,14 @@ Items marked **[ASSUMPTION]** are unconfirmed. Open questions are in section 16.
 
 ## 1. Summary
 
-A website for a 12-week graduate placement in which graduates **rotate across teams**. It explains the company and the placement, introduces the team, shows what happens each week, shares feedback from previous graduates, and lets eligible graduates apply through an embedded **Google Form**.
+A website for a 12-week graduate placement in which graduates **rotate across teams**. It explains the company and the placement, introduces the team, gives an overview of the skills they can build over the 12 weeks, shares feedback from previous graduates, and lets eligible graduates apply through an embedded **Google Form**.
 
 ## 2. Decisions so far
 
 | Question | Decision |
 |---|---|
 | Field | Mixed / rotation across teams |
-| 12-week structure | 12 individual weeks, currently filled with dummy data (induction, three rotations, showcase) |
+| 12-week content | A **12-week overview** of the skills graduates can build and what's covered in each (two groups: educational and personal skills). No week-by-week schedule. Currently dummy data |
 | Applications | Google Form, embedded in / linked from the website |
 | Build approach | Option A: hand-built static site (plain HTML, CSS, JavaScript); no backend |
 | Where it runs | Localhost first; public hosting is chosen later |
@@ -29,7 +29,7 @@ A website for a 12-week graduate placement in which graduates **rotate across te
 
 ## 3. Problem and opportunity
 
-Graduates need clear, trustworthy information to decide whether to apply: what the company does, who they will work with, what each week looks like, what past graduates thought, and how selection works. A single site answers those questions and sends applicants to one consistent application form.
+Graduates need clear, trustworthy information to decide whether to apply: what the company does, who they will work with, what skills they'll build, what past graduates thought, and how selection works. A single site answers those questions and sends applicants to one consistent application form.
 
 ## 4. Goals and non-goals
 
@@ -116,94 +116,76 @@ Rules once real: real quotes only, with written permission; first name and cohor
 - Compare teams and roles and make a reasoned choice about their next step
 - Keep a reflection log that evidences progress
 
-## 11. The 12-week placement (dummy data)
+## 11. The 12-week overview (dummy data)
 
-Each week has the same five fields. The rotation lengths and teams are invented; change them to match the real programme. On the website each week is one entry in `src/data/weeks.js`.
+Over 12 weeks you'll build these skills through real work, mentoring and structured learning. This is an overview of some of what you'll experience. Exact activities vary by team.
 
-### Week 1
-- **Phase / team:** Induction
-- **Focus:** Welcome and orientation
-- **Key activities:** Company welcome, meet the programme lead, mentor and cohort, laptop and access set-up, programme overview, agree personal goals
-- **Output / milestone:** Personal goals drafted
-- **Supervisor / mentor check-ins:** 1:1 with programme lead; first mentor meeting
+### Educational skills
 
-### Week 2
-- **Phase / team:** Induction
-- **Focus:** Understand the business
-- **Key activities:** Tour of products and teams, how Brightpath makes money, security and data basics, shadow colleagues across departments
-- **Output / milestone:** Goals agreed; rotation plan confirmed
-- **Supervisor / mentor check-ins:** Weekly 1:1; mentor catch-up
+Skills and knowledge you'll develop through learning and project work.
 
-### Week 3
-- **Phase / team:** Rotation 1: Engineering
-- **Focus:** Join the team
-- **Key activities:** Team onboarding, learn tools and ways of working (stand-ups, code review), pair with a team member, first small task
-- **Output / milestone:** First task completed
-- **Supervisor / mentor check-ins:** Weekly 1:1 with Engineering supervisor
+- **Presentation skills**
+  - Structuring a talk
+  - Making clear slides
+  - Speaking with confidence
+  - Handling questions
+  - Presenting to senior leaders at the final showcase
+- **Creating your own AI tool**
+  - What AI tools can and can't do
+  - Spotting a task worth automating
+  - Building a simple tool of your own
+  - Testing it
+  - Using AI responsibly
+- **Research and analysis**
+  - Framing a good question
+  - Finding and judging reliable sources
+  - Gathering and organising evidence
+  - Analysing what you find and drawing clear conclusions
+  - Summarising your findings
+- **Market research**
+  - Understanding who the customers are and what they need
+  - Looking at competitors and trends
+  - Designing simple surveys or interviews
+  - Turning findings into recommendations
+- **Business and portfolio mapping**
+  - Mapping the company's products, services and customers
+  - Seeing how they fit together
+  - Understanding where each team contributes
+- **Communicating with different audiences**
+  - Adapting your tone, detail and format to your audience
+  - Talking with colleagues, managers, customers and senior leaders
+- **Helping plan and deliver events**
+  - Planning and scheduling
+  - Coordinating people and logistics
+  - Running the day
+  - Reviewing what worked afterwards (for example cohort events or the showcase)
 
-### Week 4
-- **Phase / team:** Rotation 1: Engineering
-- **Focus:** Contribute
-- **Key activities:** Take on a scoped feature or fix with support; attend planning and retrospective
-- **Output / milestone:** Work in review
-- **Supervisor / mentor check-ins:** Weekly 1:1; mentor catch-up
+### Personal skills
 
-### Week 5
-- **Phase / team:** Rotation 1: Engineering
-- **Focus:** Deliver and hand over
-- **Key activities:** Finish the task, document it, demo to the team, rotation feedback conversation
-- **Output / milestone:** Rotation 1 deliverable and feedback recorded
-- **Supervisor / mentor check-ins:** End-of-rotation review
+Skills that help you work well in any role.
 
-### Week 6
-- **Phase / team:** Rotation 2: Data and Analytics
-- **Focus:** Join the team
-- **Key activities:** Team onboarding, learn data tools and reporting, shadow analysts, agree a small analysis question
-- **Output / milestone:** Question and plan agreed
-- **Supervisor / mentor check-ins:** Weekly 1:1 with Data supervisor
+- **Professional communication**
+  - Clear emails and messages
+  - Meeting etiquette
+  - Writing short updates
+  - Giving and receiving feedback
+- **Organisation**
+  - Prioritising work
+  - Managing your time
+  - Planning tasks
+  - Keeping track of what's next
+- **Building commercial awareness**
+  - How the company makes money
+  - Who its customers are
+  - The market and competitors
+  - Costs and value
+- **Problem solving**
+  - Breaking a problem down
+  - Generating options
+  - Testing ideas
+  - Making and explaining a decision
 
-### Week 7
-- **Phase / team:** Rotation 2: Data and Analytics
-- **Focus:** Analyse
-- **Key activities:** Collect and clean data, build analysis or dashboard, regular check-ins with the team
-- **Output / milestone:** Draft analysis
-- **Supervisor / mentor check-ins:** Weekly 1:1; mid-point review with programme lead
-
-### Week 8
-- **Phase / team:** Rotation 2: Data and Analytics
-- **Focus:** Present findings
-- **Key activities:** Finalise analysis, present findings to stakeholders, handover notes, rotation feedback
-- **Output / milestone:** Rotation 2 deliverable and feedback recorded
-- **Supervisor / mentor check-ins:** End-of-rotation review
-
-### Week 9
-- **Phase / team:** Rotation 3: Product and Customer
-- **Focus:** Join the team
-- **Key activities:** Team onboarding, sit in on customer calls, learn how product decisions are made, scope a small improvement
-- **Output / milestone:** Improvement scoped
-- **Supervisor / mentor check-ins:** Weekly 1:1 with Product supervisor
-
-### Week 10
-- **Phase / team:** Rotation 3: Product and Customer
-- **Focus:** Shape and propose
-- **Key activities:** Gather customer input, write a short proposal with options, test ideas with the team
-- **Output / milestone:** Proposal drafted
-- **Supervisor / mentor check-ins:** Weekly 1:1; mentor catch-up
-
-### Week 11
-- **Phase / team:** Showcase
-- **Focus:** Prepare to present
-- **Key activities:** Pull together learnings from all three rotations, build the showcase presentation, rehearse with the cohort and mentor
-- **Output / milestone:** Showcase presentation ready
-- **Supervisor / mentor check-ins:** Rehearsal feedback from mentor
-
-### Week 12
-- **Phase / team:** Showcase
-- **Focus:** Present and reflect
-- **Key activities:** Cohort showcase to senior leaders, end-of-placement review, career conversation, feedback both ways, complete reflection log
-- **Output / milestone:** Final presentation, reflection write-up, next-step preferences
-- **Supervisor / mentor check-ins:** Final review with programme lead and mentor
-
+On the website this is one page (`overview.html`) driven by `src/data/overview.js`. There is deliberately **no week-by-week schedule**.
 
 ## 12. Application (Google Forms)
 
@@ -251,7 +233,7 @@ Priority: **P0** required for launch, **P1** should have, **P2** nice to have.
 | W2 | **About the company** | P0 |
 | W3 | **Meet the team** | P0 |
 | W4 | **About the placement:** objectives and what graduates gain | P0 |
-| W5 | **Week-by-week:** all 12 weeks, grouped by phase | P0 |
+| W5 | **12-week overview:** the educational and personal skills, each with what will be covered (no week-by-week schedule) | P0 |
 | W6 | **What we're looking for:** eligibility and selection criteria | P0 |
 | W7 | **How to apply:** process steps and key dates | P0 |
 | W8 | **Apply:** embedded Google Form, new-tab fallback, closed state | P0 |
@@ -259,7 +241,7 @@ Priority: **P0** required for launch, **P1** should have, **P2** nice to have.
 | W10 | **FAQs** | P0 |
 | W11 | **Contact** | P0 |
 | W12 | **Privacy notice** and **accessibility statement** | P0 |
-| W13 | Week-by-week presented as an expandable timeline with a plain-list fallback | P1 |
+| W13 | Skills shown as clearly separated educational and personal groups of cards | P1 |
 | W14 | Switch applications open/closed from one config value | P0 |
 | W15 | Social-share preview image and page descriptions | P2 |
 

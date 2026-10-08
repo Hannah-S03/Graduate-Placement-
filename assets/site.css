@@ -104,3 +104,9 @@ ol.steps strong { display: block; }
 footer.site { border-top: 1px solid var(--border); background: var(--surface); padding: 24px 0; color: var(--muted); font-size: .92rem; }
 footer.site ul { list-style: none; display: flex; gap: 16px; flex-wrap: wrap; padding: 0; margin: 0 0 8px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skill-group { margin-top: 32px; }
+.skill-group > h2 { margin-top: 0; }
+.covers-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 4px; }
+.card ul { margin: 0; padding-left: 20px; }
+.card li { margin-bottom: 4px; }
+.note { margin-top: 28px; color: var(--muted); font-style: italic; }

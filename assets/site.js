@@ -5,14 +5,14 @@
   var TEAM = window.SITE_TEAM || [];
   var FEEDBACK = window.SITE_FEEDBACK || { quotes: [], results: [] };
   var CONTENT = window.SITE_CONTENT || {};
-  var WEEKS = window.SITE_WEEKS || [];
+  var OVERVIEW = window.SITE_OVERVIEW || { groups: [] };
 
   var NAV = [
     ["index.html", "Home"],
     ["about-company.html", "About us"],
     ["meet-the-team.html", "Meet the team"],
     ["about-placement.html", "The placement"],
-    ["week-by-week.html", "Week by week"],
+    ["overview.html", "12-week overview"],
     ["how-to-apply.html", "How to apply"],
     ["graduate-feedback.html", "Graduate feedback"],
     ["faqs.html", "FAQs"],
@@ -46,7 +46,7 @@
       h.className = "site-chrome";
       if (CFG.usingDummyData) {
         h.appendChild(el("div", { class: "banner", role: "note" }, [
-          el("div", { class: "wrap", text: "Sample content: the company, people, quotes and week details on this site are invented placeholders for layout review." })
+          el("div", { class: "wrap", text: "Sample content: the company, people, quotes and programme details on this site are invented placeholders for layout review." })
         ]));
       }
       var header = el("header", { class: "site" });
@@ -151,39 +151,26 @@
     t.appendChild(ul);
   };
 
-  R.weeks = function (t) {
-    var groups = [];
-    WEEKS.forEach(function (w) {
-      var last = groups[groups.length - 1];
-      if (!last || last.phase !== w.phase) groups.push({ phase: w.phase, weeks: [] });
-      groups[groups.length - 1].weeks.push(w);
-    });
-    var bar = el("div", { class: "toolbar" });
-    var all = el("button", { type: "button", text: "Expand all weeks" });
-    var none = el("button", { type: "button", text: "Collapse all weeks" });
-    bar.appendChild(all); bar.appendChild(none);
-    t.appendChild(bar);
-    groups.forEach(function (gr) {
-      var s = el("section", { class: "phase" });
-      var first = gr.weeks[0].week, lastW = gr.weeks[gr.weeks.length - 1].week;
-      s.appendChild(el("h2", { text: gr.phase + " (" + (first === lastW ? "week " + first : "weeks " + first + "–" + lastW) + ")" }));
-      gr.weeks.forEach(function (w) {
-        var d = el("details", { class: "week" }, [
-          el("summary", { text: "Week " + w.week + ": " + w.focus }),
-          el("dl", {}, [
-            el("dt", { text: "Phase / team" }), el("dd", { text: w.phase }),
-            el("dt", { text: "Key activities" }), el("dd", { text: w.activities }),
-            el("dt", { text: "Output" }), el("dd", { text: w.output }),
-            el("dt", { text: "Check-ins" }), el("dd", { text: w.checkins })
-          ])
-        ]);
-        s.appendChild(d);
+  R.overview = function (t) {
+    if (OVERVIEW.lead) t.appendChild(el("p", { class: "lead", text: OVERVIEW.lead }));
+    (OVERVIEW.groups || []).forEach(function (g) {
+      var section = el("section", { class: "skill-group", "aria-labelledby": "grp-" + g.title.toLowerCase().replace(/\s+/g, "-") });
+      section.appendChild(el("h2", { id: "grp-" + g.title.toLowerCase().replace(/\s+/g, "-"), text: g.title }));
+      if (g.intro) section.appendChild(el("p", { text: g.intro }));
+      var grid = el("div", { class: "grid" });
+      (g.skills || []).forEach(function (sk) {
+        var ul = el("ul");
+        (sk.covers || []).forEach(function (c) { ul.appendChild(el("li", { text: c })); });
+        grid.appendChild(el("article", { class: "card" }, [
+          el("h3", { text: sk.name }),
+          el("p", { class: "covers-label", text: "What we'll cover" }),
+          ul
+        ]));
       });
-      t.appendChild(s);
+      section.appendChild(grid);
+      t.appendChild(section);
     });
-    function setAll(v) { t.querySelectorAll("details.week").forEach(function (d) { d.open = v; }); }
-    all.addEventListener("click", function () { setAll(true); });
-    none.addEventListener("click", function () { setAll(false); });
+    if (OVERVIEW.note) t.appendChild(el("p", { class: "note", text: OVERVIEW.note }));
   };
 
   R.eligibility = function (t) {

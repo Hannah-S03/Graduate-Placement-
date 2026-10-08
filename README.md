@@ -22,10 +22,10 @@ Only you can see the site while it runs this way. To make it public later, uploa
 
 | Path | What it is |
 |---|---|
-| `*.html` | The pages (home, about, team, week by week, apply, and so on) |
+| `*.html` | The pages (home, about, team, 12-week overview, apply, and so on) |
 | `assets/site.css`, `assets/site.js` | Shared styles, and the script that builds the menu, footer and page sections from the data files |
 | `src/config.js` | Site settings: applications open/closed, closing date, contact email, **Google Form link**, dummy-data banner |
-| `src/data/weeks.js` | The 12 weeks |
+| `src/data/overview.js` | The 12-week overview: educational and personal skills, and what each covers |
 | `src/data/company.js` | About the company |
 | `src/data/team.js` | Meet the team |
 | `src/data/feedback.js` | Previous graduate feedback |
