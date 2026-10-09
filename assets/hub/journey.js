@@ -8,7 +8,7 @@
   R.journey = function (t) {
     var status = Hub.status();
     var summary = el("div"), addHost = el("div"), filterHost = el("div"), list = el("div"), suggest = el("div");
-    var ui = { adding: false, editing: null, editTask: null, openComments: {}, type: "all", status: "all" };
+    var ui = { adding: false, editing: null, editTask: null, openComments: {}, openGoals: {}, addingTask: {}, suggestOpen: false, type: "all", status: "all" };
     Hub.notices(t);
     [status, summary, addHost, filterHost, list, suggest].forEach(function (n) { t.appendChild(n); });
 
@@ -19,25 +19,17 @@
       });
     }
     function focusGoal(id) {
-      var h = list.querySelector('[data-id="' + id + '"] h3');
-      if (h) Hub.focus(h);
+      var b = list.querySelector('[data-id="' + id + '"] .goal-toggle');
+      if (b) b.focus();
     }
 
+    // One plain line instead of tiles: how many goals, and how many tasks are completed.
     function renderSummary() {
       summary.textContent = "";
-      var ul = el("ul", { class: "tiles" });
-      TYPES.forEach(function (ty) {
-        var goals = S.state.goals.filter(function (g) { return g.type === ty.value; });
-        var avg = goals.length ? goals.reduce(function (a, g) { return a + Hub.goalProgress(g); }, 0) / goals.length : 0;
-        var li = el("li", {}, [
-          el("span", { text: ty.label + " goals" }),
-          el("strong", { text: String(goals.length) }),
-          Hub.progress(avg, ty.label + " goals average progress"),
-          el("span", { class: "muted", text: goals.length ? Math.round(avg) + "% average progress" : "None yet" })
-        ]);
-        ul.appendChild(li);
-      });
-      summary.appendChild(ul);
+      var goals = S.state.goals; if (!goals.length) return;
+      var total = 0, done = 0;
+      goals.forEach(function (g) { var c = Hub.taskCounts(g); total += c.total; done += c.completed; });
+      summary.appendChild(el("p", { class: "goal-summary", text: Hub.plural(goals.length, "goal", "goals") + " \u00B7 " + (total ? done + " of " + Hub.plural(total, "task", "tasks") + " completed" : "no tasks yet") }));
     }
 
     function goalFields() {
@@ -63,7 +55,7 @@
         onCancel: function () { ui.adding = false; renderAdd(); },
         onSubmit: function (v) {
           var g = { id: S.id(), type: v.type, title: v.title, description: v.description, target: v.target, progress: 0, created: S.today(), tasks: [] };
-          S.state.goals.push(g);
+          S.state.goals.push(g); ui.openGoals[g.id] = true;
           ui.adding = false;
           Hub.save(status, "Goal added.");
           renderAll(); focusGoal(g.id);
@@ -87,7 +79,14 @@
       var n = list.querySelector('[data-task="' + id + '"] ' + sel);
       if (n) n.focus();
     }
-    function findTask(g, id) { return g.tasks.filter(function (t) { return t.id === id; })[0]; }
+
+    function icon() {
+      var ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", "0 0 16 16"); svg.setAttribute("width", "14"); svg.setAttribute("height", "14"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("focusable", "false");
+      var path = document.createElementNS(ns, "path");
+      path.setAttribute("d", "M2 2.5h12v8H7.5L4 13.5v-3H2z"); path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor"); path.setAttribute("stroke-width", "1.4"); path.setAttribute("stroke-linejoin", "round");
+      svg.appendChild(path); return svg;
+    }
 
     function commentsPanel(g, t, panel) {
       panel.textContent = "";
@@ -109,7 +108,7 @@
         onSubmit: function (v) {
           t.comments.push({ id: S.id(), date: S.today(), text: v.text });
           ui.openComments[t.id] = true;
-          Hub.save(status, "Comment added."); renderList(); focusTask(t.id, ".comments-toggle");
+          Hub.save(status, "Comment added."); renderAll(); focusTask(t.id, ".comments-toggle");
         }
       }));
     }
@@ -119,69 +118,95 @@
       if (ui.editTask === t.id) {
         li.appendChild(Hub.form({
           fields: [{ name: "text", label: "Task", required: true, maxlength: 200 }], values: { text: t.text }, submitLabel: "Save task",
-          onCancel: function () { ui.editTask = null; renderList(); focusTask(t.id, "button"); },
+          onCancel: function () { ui.editTask = null; renderList(); focusTask(t.id, ".more-btn"); },
           onSubmit: function (v) { t.text = v.text; ui.editTask = null; Hub.save(status, "Task updated."); renderList(); focusTask(t.id, "select"); }
         }));
         return li;
       }
-      var sel = el("select", { class: "task-status", "aria-label": "Status of task: " + t.text });
+      var line = el("div", { class: "task-line" });
+      line.appendChild(el("span", { class: "task-text", text: t.text }));
+      var sel = el("select", { class: "task-status s-" + t.status, "aria-label": "Status of task: " + t.text });
       Object.keys(Hub.taskStatusLabel).forEach(function (k) { var o = el("option", { value: k, text: Hub.taskStatusLabel[k] }); if (k === t.status) o.selected = true; sel.appendChild(o); });
       sel.addEventListener("change", function () {
         t.status = sel.value; Hub.save(status, "Task marked " + Hub.taskStatusLabel[t.status].toLowerCase() + ".");
         renderAll(); focusTask(t.id, "select");
       });
-      li.appendChild(el("div", { class: "task-main" }, [el("span", { class: "task-text", text: t.text }), sel]));
-      var acts = el("div", { class: "task-actions" });
+      line.appendChild(sel);
       var panel = el("div", { class: "task-comments", id: "tc-" + t.id });
-      var tog = el("button", { type: "button", class: "btn small secondary comments-toggle", "aria-controls": panel.id, "aria-label": "Comments for task " + t.text + " (" + t.comments.length + ")", text: "Comments (" + t.comments.length + ")" });
+      var tog = el("button", { type: "button", class: "btn small secondary comments-toggle", "aria-controls": panel.id, "aria-label": "Comments for task " + t.text + " (" + t.comments.length + ")" }, [icon(), el("span", { text: String(t.comments.length) })]);
       function setOpen(open) { tog.setAttribute("aria-expanded", String(open)); panel.hidden = !open; ui.openComments[t.id] = open; if (open) commentsPanel(g, t, panel); }
       tog.addEventListener("click", function () { setOpen(panel.hidden); if (!panel.hidden) { var f = panel.querySelector("textarea"); if (f) f.focus(); } });
-      acts.appendChild(tog);
-      var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit task " + t.text });
-      ed.addEventListener("click", function () { ui.editTask = t.id; renderList(); var f = list.querySelector('[data-task="' + t.id + '"] input'); if (f) f.focus(); });
-      acts.appendChild(ed);
-      acts.appendChild(Hub.confirmButton({
-        label: "Delete", ariaLabel: "Delete task " + t.text, message: "Delete this task?",
-        onConfirm: function () { g.tasks = g.tasks.filter(function (x) { return x.id !== t.id; }); Hub.save(status, "Task deleted."); renderAll(); focusGoal(g.id); }
+      line.appendChild(tog);
+      var menu = Hub.moreMenu("More actions for task " + t.text);
+      var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit task", "aria-label": "Edit task " + t.text });
+      ed.addEventListener("click", function () { menu.close(false); ui.editTask = t.id; renderList(); var f = list.querySelector('[data-task="' + t.id + '"] input'); if (f) f.focus(); });
+      menu.panel.appendChild(ed);
+      menu.panel.appendChild(Hub.confirmButton({
+        label: "Delete task", ariaLabel: "Delete task " + t.text, message: "Delete this task?",
+        onConfirm: function () { menu.close(false); g.tasks = g.tasks.filter(function (x) { return x.id !== t.id; }); Hub.save(status, "Task deleted."); renderAll(); focusGoal(g.id); }
       }));
-      li.appendChild(acts);
+      line.appendChild(menu.wrap);
+      li.appendChild(line);
       li.appendChild(panel);
       setOpen(!!ui.openComments[t.id]);
       return li;
     }
 
-    function taskList(g) {
-      var box = el("div", { class: "tasks" });
-      if (g.tasks.length) {
-        var ul = el("ul", { class: "task-list" });
-        g.tasks.forEach(function (t) { ul.appendChild(taskRow(g, t)); });
-        box.appendChild(ul);
+    // "+ Add task" reveals a one-line form that stays open so several tasks can be added in a row.
+    function addTask(g) {
+      var box = el("div", { class: "add-task" });
+      if (!ui.addingTask[g.id]) {
+        var b = el("button", { type: "button", class: "btn small secondary", text: "+ Add task", "aria-label": "Add a task to " + g.title });
+        b.addEventListener("click", function () { ui.addingTask[g.id] = true; renderList(); var f = list.querySelector('[data-id="' + g.id + '"] .add-task input'); if (f) f.focus(); });
+        box.appendChild(b); return box;
       }
-      box.appendChild(Hub.form({
-        fields: [{ name: "text", label: "Add a task", required: true, maxlength: 200, hint: g.tasks.length >= 50 ? "You have reached the limit of 50 tasks for this goal." : "" }],
+      var form = Hub.form({
+        fields: [{ name: "text", label: "New task", required: true, maxlength: 200 }],
         values: {}, submitLabel: "Add task", extraClass: "inline",
+        onCancel: function () { ui.addingTask[g.id] = false; renderList(); var b2 = list.querySelector('[data-id="' + g.id + '"] .add-task button'); if (b2) b2.focus(); },
         onSubmit: function (v) {
           if (g.tasks.length >= 50) { status.say("A goal can hold up to 50 tasks.", true); return; }
-          var t = { id: S.id(), text: v.text, status: "notstarted", comments: [] };
-          g.tasks.push(t); Hub.save(status, "Task added."); renderAll(); focusTask(t.id, "select");
+          g.tasks.push({ id: S.id(), text: v.text, status: "notstarted", comments: [] });
+          Hub.save(status, "Task added."); renderAll();
+          var f = list.querySelector('[data-id="' + g.id + '"] .add-task input'); if (f) f.focus();
         }
-      }));
-      return box;
+      });
+      form.addEventListener("keydown", function (e) { if (e.key === "Escape") { ui.addingTask[g.id] = false; renderList(); var b3 = list.querySelector('[data-id="' + g.id + '"] .add-task button'); if (b3) b3.focus(); } });
+      box.appendChild(form); return box;
     }
 
-    function goalCard(g) {
-      var st = Hub.goalStatus(g);
-      var card = el("article", { class: "item", "data-id": g.id });
-      card.appendChild(el("h3", { text: g.title }));
+    function goalCard(g, startsOpen) {
+      var st = Hub.goalStatus(g), counts = Hub.taskCounts(g);
+      var card = el("article", { class: "item goal", "data-id": g.id });
+      var open = ui.editing === g.id ? true : (ui.openGoals[g.id] !== undefined ? ui.openGoals[g.id] : startsOpen);
+      var body = el("div", { class: "goal-body", id: "gb-" + g.id });
+
+      // header: title button, type / status / due badges, task count, and the goal's own actions
+      var head = el("div", { class: "goal-head" });
+      var toggle = el("button", { type: "button", class: "goal-toggle", "aria-controls": body.id }, [el("span", { text: g.title }), el("span", { class: "chev", "aria-hidden": "true" })]);
+      function setOpen(o) { toggle.setAttribute("aria-expanded", String(o)); body.hidden = !o; card.classList.toggle("is-collapsed", !o); }
+      toggle.addEventListener("click", function () { var o = body.hidden; ui.openGoals[g.id] = o; setOpen(o); });
+      head.appendChild(el("h3", {}, [toggle]));
+      var menu = Hub.moreMenu("More actions for goal " + g.title);
+      var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit goal", "aria-label": "Edit " + g.title });
+      ed.addEventListener("click", function () { menu.close(false); ui.editing = g.id; renderList(); var f = list.querySelector('[data-id="' + g.id + '"] input'); if (f) f.focus(); });
+      menu.panel.appendChild(ed);
+      menu.panel.appendChild(Hub.confirmButton({
+        label: "Delete goal", ariaLabel: "Delete " + g.title, message: "Delete this goal and its tasks?",
+        onConfirm: function () {
+          menu.close(false); S.state.goals = S.state.goals.filter(function (x) { return x.id !== g.id; });
+          Hub.save(status, "Goal deleted."); renderAll(); Hub.focus(addHost.querySelector("button") || status);
+        }
+      }));
+      head.appendChild(menu.wrap);
+      card.appendChild(head);
       var meta = el("div", { class: "item-meta" }, [Hub.badge(typeLabel(g.type), "info"), Hub.badge(Hub.goalStatusLabel[st], st === "done" ? "ok" : st === "inprogress" ? "warn" : "info")]);
       if (g.target) { var db = Hub.dueBadge(g.target, st === "done"); meta.appendChild(Hub.badge(st === "done" ? "Target " + Hub.fmtDate(g.target) : db.text, db.kind)); }
+      meta.appendChild(el("span", { class: "muted task-count", text: counts.total ? counts.completed + " of " + Hub.plural(counts.total, "task", "tasks") + " completed" : "No tasks yet" }));
       card.appendChild(meta);
-      if (g.description) card.appendChild(el("p", { text: g.description }));
-      var counts = Hub.taskCounts(g);
-      card.appendChild(el("p", { class: "muted task-count", text: counts.total ? counts.completed + " of " + Hub.plural(counts.total, "task", "tasks") + " completed" : "No tasks yet. Add a task to start tracking this goal." }));
 
       if (ui.editing === g.id) {
-        card.appendChild(Hub.form({
+        body.appendChild(Hub.form({
           fields: goalFields(), values: g, submitLabel: "Save changes",
           onCancel: function () { ui.editing = null; renderList(); focusGoal(g.id); },
           onSubmit: function (v) {
@@ -189,21 +214,17 @@
             ui.editing = null; Hub.save(status, "Goal updated."); renderAll(); focusGoal(g.id);
           }
         }));
-        return card;
+      } else {
+        if (g.description) body.appendChild(el("p", { class: "goal-desc", text: g.description }));
+        if (counts.total) {
+          var ul = el("ul", { class: "task-list" });
+          g.tasks.forEach(function (t) { ul.appendChild(taskRow(g, t)); });
+          body.appendChild(ul);
+        } else body.appendChild(el("p", { class: "muted", text: "Add a task to start tracking this goal." }));
+        body.appendChild(addTask(g));
       }
-      card.appendChild(taskList(g));
-      var actions = el("div", { class: "actions goal-actions" });
-      var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit goal", "aria-label": "Edit " + g.title });
-      ed.addEventListener("click", function () { ui.editing = g.id; renderList(); focusGoal(g.id); });
-      actions.appendChild(ed);
-      actions.appendChild(Hub.confirmButton({
-        label: "Delete goal", ariaLabel: "Delete " + g.title, message: "Delete this goal?",
-        onConfirm: function () {
-          S.state.goals = S.state.goals.filter(function (x) { return x.id !== g.id; });
-          Hub.save(status, "Goal deleted."); renderAll(); Hub.focus(addHost.querySelector("button") || status);
-        }
-      }));
-      card.appendChild(actions);
+      card.appendChild(body);
+      setOpen(open);
       return card;
     }
 
@@ -219,8 +240,10 @@
       });
       list.appendChild(el("h2", { text: "Your goals" }));
       if (!shown.length) { list.appendChild(el("p", { text: "No goals match these filters." })); return; }
-      var wrap = el("div", { class: "cols" });
-      shown.forEach(function (g) { wrap.appendChild(goalCard(g)); });
+      var wrap = el("div", { class: "goal-list" });
+      // the first goal that is not finished starts open; the rest start folded
+      var first = shown.filter(function (g) { return Hub.goalStatus(g) !== "done"; })[0] || shown[0];
+      shown.forEach(function (g) { wrap.appendChild(goalCard(g, g === first)); });
       list.appendChild(wrap);
     }
 
@@ -230,18 +253,21 @@
       var ideas = Hub.skills().map(function (s) { return { title: "Develop skill: " + s.name, skill: s.name }; })
         .filter(function (i) { return have.indexOf(i.title) === -1; }).slice(0, 6);
       if (!ideas.length) return;
-      suggest.appendChild(el("h2", { text: "Suggested goals" }));
-      suggest.appendChild(el("p", { text: "One click adds a development goal based on the skills in your scheme. You can edit it afterwards." }));
+      var det = el("details", { class: "suggest-box" }, [el("summary", { text: "Need ideas? Suggested goals" })]);
+      if (ui.suggestOpen) det.open = true;
+      det.addEventListener("toggle", function () { ui.suggestOpen = det.open; });
+      det.appendChild(el("p", { text: "One click adds a development goal based on the skills in your scheme. You can edit it afterwards." }));
       var ul = el("ul", { class: "plain" });
       ideas.forEach(function (i) {
         var b = el("button", { type: "button", class: "btn small secondary", text: "Add", "aria-label": "Add goal: " + i.title });
         b.addEventListener("click", function () {
           var g = { id: S.id(), type: "development", title: i.title, description: "", target: "", progress: 0, created: S.today(), tasks: [] };
-          S.state.goals.push(g); Hub.save(status, "Goal added: " + i.title + "."); renderAll(); focusGoal(g.id);
+          S.state.goals.push(g); ui.openGoals[g.id] = true; Hub.save(status, "Goal added: " + i.title + "."); renderAll(); focusGoal(g.id);
         });
         ul.appendChild(el("li", {}, [b, " ", i.title]));
       });
-      suggest.appendChild(ul);
+      det.appendChild(ul);
+      suggest.appendChild(det);
     }
 
     function renderAll() { renderSummary(); renderAdd(); renderFilters(); renderList(); renderSuggest(); }

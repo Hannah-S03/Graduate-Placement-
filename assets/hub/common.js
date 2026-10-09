@@ -192,6 +192,33 @@
     return form;
   };
 
+  // A "⋯" button that reveals a small panel of actions (a disclosure, not an ARIA menu). Escape or a click outside closes it.
+  // Returns { wrap, panel, button, close }: put the action buttons inside panel.
+  var openMenu = null;
+  function closeMenu(refocus) {
+    var m = openMenu; openMenu = null;
+    if (!m) return;
+    m.button.setAttribute("aria-expanded", "false"); m.panel.hidden = true;
+    if (refocus && document.body.contains(m.button)) m.button.focus();
+  }
+  document.addEventListener("click", function (e) { if (openMenu && document.contains(e.target) && !openMenu.wrap.contains(e.target)) closeMenu(false); });
+  Hub.moreMenu = function (label) {
+    var id = nextId("mm-");
+    var wrap = el("span", { class: "more-menu" });
+    var button = el("button", { type: "button", class: "btn small secondary more-btn", "aria-expanded": "false", "aria-controls": id, "aria-label": label, text: "\u22EF" });
+    var panel = el("div", { class: "more-panel", id: id });
+    panel.hidden = true;
+    var menu = { wrap: wrap, panel: panel, button: button, close: closeMenu };
+    button.addEventListener("click", function () {
+      var wasOpen = openMenu === menu;
+      closeMenu(false);
+      if (!wasOpen) { openMenu = menu; button.setAttribute("aria-expanded", "true"); panel.hidden = false; }
+    });
+    wrap.addEventListener("keydown", function (e) { if (e.key === "Escape" && openMenu === menu) { e.stopPropagation(); closeMenu(true); } });
+    wrap.appendChild(button); wrap.appendChild(panel);
+    return menu;
+  };
+
   // A delete (or other risky) button that asks "Are you sure?" on the page. opts: { label, ariaLabel, message, confirmLabel, onConfirm }
   Hub.confirmButton = function (opts) {
     var holder = el("span", { class: "confirm-holder" });
