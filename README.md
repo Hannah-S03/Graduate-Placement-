@@ -10,10 +10,11 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 |---|---|
 | **My profile** (home) | The programme progress bar, **weekly goals**, a small **progress update** (with a copy-to-share button), a **calendar of upcoming events and reminders** (with calendar files), overall progress, reminders, pinned links, and backup and restore |
 | **My journey** | Add development, career and placement goals; each goal holds tasks marked not started, in progress or completed, with comments |
-| **My development** | Record milestones and rate skills at the start and now |
+| **My development** | Record milestones and rate skills at the start and now, with a **skills chart** (radar or bars, with a table version) |
 | **Quick links** | Pin company systems and resources, and add your own |
 | **Learning** | Required training with reminders (and calendar files), saved courses and opportunities |
 | **Company hub** | Company information, the central team, placement details, key contacts and your own network |
+| **Meetings** | **1:1 meeting notes** (agenda, notes and actions, which can be turned into goal tasks, plus the next meeting date in your calendar) and a **feedback log** (who said what, what you will do about it, linked to a goal, and savable to your achievements). Meeting notes are private to the browser and are left out of the scheme record |
 | **Reflection** | A note on what you learnt each week |
 | **Achievements** | A portfolio of projects and accomplishments, with a printable and downloadable scheme record |
 
@@ -55,7 +56,7 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | `assets/site.js` | Header (menu, icons, search and dark-mode buttons), page banners, footer and the company, objectives, skills and FAQ sections |
 | `assets/theme.js` | Sets the light or dark theme before the page is drawn |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
-| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages), `search.js` (the header search) and one script per section |
+| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages), `search.js` (the header search), `meetings.js` (meetings and feedback) and one script per section |
 | `src/config.js` | Names, programme start and end dates, contact email, dummy-data banner switch |
 | `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 

@@ -6,23 +6,7 @@
 
   // The Company hub is a long reference page, so each section can be folded. On a laptop every section starts open;
   // on a phone only the first does. The "On this page" links open the section they point to.
-  document.addEventListener("DOMContentLoaded", function () {
-    var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
-    sections.forEach(function (sec, i) {
-      sec.heading = sec.querySelector("h2");
-      if (!sec.heading) return;
-      sec.classList.add("foldable");
-      Hub.collapsible(sec, { start: i === 0 ? "open" : "closed-on-phone" });
-    });
-    function openFor(id) {
-      var sec = document.getElementById(id), btn = sec && sec.querySelector(".panel-toggle");
-      if (btn && btn.getAttribute("aria-expanded") === "false") btn.click();
-    }
-    document.querySelectorAll(".section-nav a").forEach(function (a) {
-      a.addEventListener("click", function () { openFor(a.getAttribute("href").slice(1)); });
-    });
-    if (location.hash) openFor(location.hash.slice(1));
-  });
+  document.addEventListener("DOMContentLoaded", Hub.foldSections);
 
   R.placement = function (t) {
     var P = window.SITE_PLACEMENT || { atAGlance: [], keyMoments: [] };

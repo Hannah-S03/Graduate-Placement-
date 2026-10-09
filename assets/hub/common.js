@@ -219,6 +219,26 @@
     return menu;
   };
 
+  // Pages made of several <section id="..."> blocks (Company hub, Meetings): each heading becomes a fold-away button.
+  // The first section starts open; the others start folded on phones. Links to "#section" open that section.
+  Hub.foldSections = function () {
+    var sections = Array.prototype.slice.call(document.querySelectorAll("main section[id]"));
+    sections.forEach(function (sec, i) {
+      sec.heading = sec.querySelector("h2");
+      if (!sec.heading) return;
+      sec.classList.add("foldable");
+      Hub.collapsible(sec, { start: i === 0 ? "open" : "closed-on-phone" });
+    });
+    function openFor(id) {
+      var sec = document.getElementById(id), btn = sec && sec.querySelector(".panel-toggle");
+      if (btn && btn.getAttribute("aria-expanded") === "false") btn.click();
+    }
+    document.querySelectorAll(".section-nav a").forEach(function (a) {
+      a.addEventListener("click", function () { openFor(a.getAttribute("href").slice(1)); });
+    });
+    if (location.hash) openFor(location.hash.slice(1));
+  };
+
   // ----- celebrations -----
   // A small message at the bottom of the screen (read out politely by screen readers) and an optional gold pulse on a card.
   // Each celebration is shown once: Hub.celebrateOnce("goal:abc", "Goal complete", "You finished ...", cardNode).
@@ -357,6 +377,11 @@
       var d = S.daysBetween(today, c.date);
       if (d === 0 || d === 1) out.push({ level: 1, kind: "warn", text: "Event: " + c.title + " is " + (d === 0 ? "today" : "tomorrow") + (c.time ? " at " + c.time : "") + ".", href: "index.html#calendar" });
     });
+    st.meetings.forEach(function (m) {
+      if (!m.next) return;
+      var d = S.daysBetween(today, m.next);
+      if (d === 0 || d === 1) out.push({ level: 1, kind: "warn", text: "Your 1:1" + (m.withWho ? " with " + m.withWho : "") + " is " + (d === 0 ? "today" : "tomorrow") + ". Check your agenda.", href: "meetings.html" });
+    });
     if (pl.status === "during" && !st.reflections[String(pl.week)]) {
       out.push({ level: 3, kind: "info", text: "Write your reflection for week " + pl.week + ".", href: "reflection.html" });
     }
@@ -441,19 +466,24 @@
 
   // Everything coming up (today or later), soonest first: the graduate's own events and reminders,
   // training due dates, goal target dates, planned milestones and planned learning. ics: true = can go in a calendar file.
-  Hub.agenda = function (limit) {
-    var st = S.state, today = S.today(), items = [];
+  // opts.all = true also includes dates in the past (used by the month view); finished items are still left out.
+  Hub.agenda = function (limit, opts) {
+    var st = S.state, today = S.today(), items = [], all = !!(opts && opts.all);
+    function inRange(d) { return all || d >= today; }
+    st.meetings.forEach(function (m) {
+      if (m.next && inRange(m.next)) items.push({ id: "mt-" + m.id, kind: "1:1 meeting", title: "1:1" + (m.withWho ? " with " + m.withWho : ""), date: m.next, time: "", href: "meetings.html", ics: true, desc: m.title || "" });
+    });
     st.calendar.forEach(function (c) {
-      if (c.date >= today) items.push({ id: c.id, kind: "My event", title: c.title, date: c.date, time: c.time, where: c.where, desc: c.note, ics: true, mine: true });
+      if (inRange(c.date)) items.push({ id: c.id, kind: "My event", title: c.title, date: c.date, time: c.time, where: c.where, desc: c.note, ics: true, mine: true });
     });
     Hub.training().forEach(function (t) {
       if (Hub.trainingStatus(t) === "complete") return;
       var due = Hub.trainingDue(t);
-      if (due && due >= today) items.push({ id: "tr-" + t.id, kind: "Training due", title: t.title + " training", date: due, time: "", href: "learning.html" });
+      if (due && inRange(due)) items.push({ id: "tr-" + t.id, kind: "Training due", title: t.title + " training", date: due, time: "", href: "learning.html" });
     });
-    st.goals.forEach(function (g) { if (Hub.goalStatus(g) !== "done" && g.target && g.target >= today) items.push({ id: "g-" + g.id, kind: "Goal due", title: g.title, date: g.target, time: "", href: "journey.html" }); });
-    st.milestones.forEach(function (m) { if (m.status !== "achieved" && m.date && m.date >= today) items.push({ id: "m-" + m.id, kind: "Milestone", title: m.title, date: m.date, time: "", href: "development.html" }); });
-    Hub.plannedLearning().forEach(function (p, i) { if (p.status !== "completed" && p.planned && p.planned >= today) items.push({ id: "l-" + i, kind: "Learning", title: p.title, date: p.planned, time: "", href: "learning.html" }); });
+    st.goals.forEach(function (g) { if (Hub.goalStatus(g) !== "done" && g.target && inRange(g.target)) items.push({ id: "g-" + g.id, kind: "Goal due", title: g.title, date: g.target, time: "", href: "journey.html" }); });
+    st.milestones.forEach(function (m) { if (m.status !== "achieved" && m.date && inRange(m.date)) items.push({ id: "m-" + m.id, kind: "Milestone", title: m.title, date: m.date, time: "", href: "development.html" }); });
+    Hub.plannedLearning().forEach(function (p, i) { if (p.status !== "completed" && p.planned && inRange(p.planned)) items.push({ id: "l-" + i, kind: "Learning", title: p.title, date: p.planned, time: "", href: "learning.html" }); });
     items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || "") < (b.time || "") ? -1 : (a.time || "") > (b.time || "") ? 1 : a.title < b.title ? -1 : 1; });
     return limit ? items.slice(0, limit) : items;
   };

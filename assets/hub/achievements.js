@@ -9,7 +9,7 @@
   function typeLabel(v) { return (TYPES.filter(function (t) { return t.value === v; })[0] || {}).label || v; }
   function byDateDesc(a, b) { return (a.date || "") < (b.date || "") ? 1 : (a.date || "") > (b.date || "") ? -1 : 0; }
 
-  // A readable text (Markdown) version of the whole scheme. Contacts are left out because they are other people's details.
+  // A readable text (Markdown) version of the whole scheme. Contacts and 1:1 meeting notes are left out because they are other people's details or private.
   Hub.schemeRecordMarkdown = function () {
     var st = S.state, p = st.profile, pl = S.programme(), L = [];
     var cfg = window.SITE_CONFIG || {};
@@ -28,6 +28,11 @@
         L.push("  - [" + (t.status === "completed" ? "x" : " ") + "] " + t.text + " (" + Hub.taskStatusLabel[t.status] + ")");
         t.comments.forEach(function (c) { L.push("    - " + (c.date ? Hub.fmtDate(c.date) + ": " : "") + c.text); });
       });
+    });
+    L.push("", "## Feedback received", "");
+    if (!st.feedback.length) L.push("None recorded.");
+    st.feedback.slice().sort(function (x, y) { return x.date < y.date ? 1 : -1; }).forEach(function (f) {
+      L.push("- " + Hub.fmtDate(f.date) + (f.from ? ", from " + f.from : "") + " (" + (f.kind === "develop" ? "to develop" : "positive") + "): " + f.text + (f.action ? " What I will do: " + f.action : ""));
     });
     L.push("", "## Milestones", "");
     if (!st.milestones.length) L.push("None recorded.");

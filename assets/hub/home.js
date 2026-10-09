@@ -182,17 +182,34 @@
   Hub.homePanels.calendar = function (status) {
     var sec = Hub.panel("Calendar and upcoming events", "calendar");
     sec.id = "calendar";
-    var addHost = el("div"), listHost = el("div");
-    var ui = { adding: false, editing: null, all: false };
-    sec.appendChild(addHost); sec.appendChild(listHost);
+    var viewHost = el("div", { class: "view-switch-row" }), addHost = el("div"), listHost = el("div");
+    var today0 = S.today();
+    var ui = { adding: false, editing: null, all: false, view: "list", y: parseInt(today0.slice(0, 4), 10), m: parseInt(today0.slice(5, 7), 10) - 1, sel: today0, prefill: "" };
+    sec.appendChild(viewHost); sec.appendChild(addHost); sec.appendChild(listHost);
+    var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    var DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    function ymd(y, m, d) { return y + "-" + pad(m + 1) + "-" + pad(d); }
+    function longDay(date) { return S.parseDate(date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }); }
 
     function icsEvent(i) { return { uid: i.id, date: i.date, time: i.time, minutes: i.minutes, title: i.title, description: i.desc, location: i.where }; }
+
+    function renderView() {
+      viewHost.textContent = "";
+      var group = el("div", { class: "view-switch", role: "group", "aria-label": "Calendar view" });
+      [["list", "List"], ["month", "Month"]].forEach(function (v) {
+        var b = el("button", { type: "button", class: "btn small secondary", "aria-pressed": String(ui.view === v[0]), text: v[1] });
+        b.addEventListener("click", function () { ui.view = v[0]; renderView(); renderList(); });
+        group.appendChild(b);
+      });
+      viewHost.appendChild(group);
+    }
 
     function renderAdd() {
       addHost.textContent = "";
       if (!ui.adding) {
         var b = el("button", { type: "button", class: "btn small", text: "Add an event" });
-        b.addEventListener("click", function () { ui.adding = true; ui.editing = null; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
+        b.addEventListener("click", function () { ui.adding = true; ui.editing = null; ui.prefill = ui.view === "month" ? ui.sel : ""; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
         addHost.appendChild(b);
         return;
       }
@@ -205,7 +222,7 @@
           { name: "where", label: "Place", maxlength: 200, hint: "Optional." },
           { name: "note", label: "Note", type: "textarea", rows: 2 }
         ],
-        values: cur || { date: S.today() }, submitLabel: cur ? "Save event" : "Add event",
+        values: cur || { date: ui.prefill || S.today() }, submitLabel: cur ? "Save event" : "Add event",
         onCancel: function () { ui.adding = false; ui.editing = null; renderAdd(); },
         onSubmit: function (v) {
           if (cur) { cur.title = v.title; cur.date = v.date; cur.time = v.time; cur.where = v.where; cur.note = v.note; }
@@ -216,42 +233,46 @@
       }));
     }
 
+    // One row of the agenda: day label, title and tags, and the buttons.
+    function itemRow(i) {
+      var label = Hub.dayLabel(i.date), relative = /^(Today|Tomorrow|In )/.test(label);
+      var when = el("div", { class: "when" }, [el("strong", { text: label }), el("span", { class: "muted", text: (relative ? Hub.fmtDate(i.date) + (i.time ? ", " + i.time : "") : (i.time || "All day")) })]);
+      var title = el("div", { class: "title" });
+      if (i.href) title.appendChild(el("a", { href: i.href, text: i.title })); else title.appendChild(document.createTextNode(i.title));
+      var meta = el("div", { class: "item-meta" }, [Hub.badge(i.kind, i.mine ? "warn" : "info")]);
+      if (i.where) meta.appendChild(el("span", { class: "muted", text: i.where }));
+      var what = el("div", { class: "what" }, [title, meta]);
+      if (i.mine && i.desc) what.appendChild(el("p", { class: "muted", text: i.desc }));
+      var actions = el("div", { class: "actions" });
+      if (i.ics) {
+        var cal = el("button", { type: "button", class: "btn small secondary", text: "Add to calendar", "aria-label": "Add " + i.title + " to your calendar" });
+        cal.addEventListener("click", function () {
+          Hub.download(Hub.slug(i.title) + ".ics", Hub.buildIcs([icsEvent(i)]), "text/calendar");
+          status.say("Calendar file downloaded for " + i.title + ". Open it to add it to your calendar.", false);
+        });
+        actions.appendChild(cal);
+      }
+      if (i.mine) {
+        var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit event " + i.title });
+        ed.addEventListener("click", function () { ui.adding = true; ui.editing = i.id; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
+        actions.appendChild(ed);
+        actions.appendChild(Hub.confirmButton({ label: "Delete", ariaLabel: "Delete event " + i.title, message: "Delete this event?", onConfirm: function () {
+          S.state.calendar = S.state.calendar.filter(function (x) { return x.id !== i.id; });
+          if (ui.editing === i.id) { ui.adding = false; ui.editing = null; renderAdd(); }
+          Hub.save(status, "Event deleted."); renderList(); Hub.changed("calendar");
+          var f = addHost.querySelector("button, input"); if (f) f.focus();
+        } }));
+      }
+      return el("li", {}, [when, what, actions]);
+    }
+
     function renderList() {
       listHost.textContent = "";
+      if (ui.view === "month") { renderMonth(); return; }
       var all = Hub.agenda(), LIMIT = 5, shown = ui.all ? all.slice(0, 40) : all.slice(0, LIMIT);
       if (!shown.length) { listHost.appendChild(el("p", { text: "Nothing coming up yet. Add an event or reminder, and dates from your goals, training and learning will appear here too." })); return; }
       var ul = el("ul", { class: "agenda" });
-      shown.forEach(function (i) {
-        var label = Hub.dayLabel(i.date), relative = /^(Today|Tomorrow|In )/.test(label);
-        var when = el("div", { class: "when" }, [el("strong", { text: label }), el("span", { class: "muted", text: (relative ? Hub.fmtDate(i.date) + (i.time ? ", " + i.time : "") : (i.time || "All day")) })]);
-        var title = el("div", { class: "title" });
-        if (i.href) title.appendChild(el("a", { href: i.href, text: i.title })); else title.appendChild(document.createTextNode(i.title));
-        var meta = el("div", { class: "item-meta" }, [Hub.badge(i.kind, i.mine ? "warn" : "info")]);
-        if (i.where) meta.appendChild(el("span", { class: "muted", text: i.where }));
-        var what = el("div", { class: "what" }, [title, meta]);
-        if (i.mine && i.desc) what.appendChild(el("p", { class: "muted", text: i.desc }));
-        var actions = el("div", { class: "actions" });
-        if (i.ics) {
-          var cal = el("button", { type: "button", class: "btn small secondary", text: "Add to calendar", "aria-label": "Add " + i.title + " to your calendar" });
-          cal.addEventListener("click", function () {
-            Hub.download(Hub.slug(i.title) + ".ics", Hub.buildIcs([icsEvent(i)]), "text/calendar");
-            status.say("Calendar file downloaded for " + i.title + ". Open it to add it to your calendar.", false);
-          });
-          actions.appendChild(cal);
-        }
-        if (i.mine) {
-          var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit event " + i.title });
-          ed.addEventListener("click", function () { ui.adding = true; ui.editing = i.id; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
-          actions.appendChild(ed);
-          actions.appendChild(Hub.confirmButton({ label: "Delete", ariaLabel: "Delete event " + i.title, message: "Delete this event?", onConfirm: function () {
-            S.state.calendar = S.state.calendar.filter(function (x) { return x.id !== i.id; });
-            if (ui.editing === i.id) { ui.adding = false; ui.editing = null; renderAdd(); }
-            Hub.save(status, "Event deleted."); renderList(); Hub.changed("calendar");
-            var f = addHost.querySelector("button, input"); if (f) f.focus();
-          } }));
-        }
-        ul.appendChild(el("li", {}, [when, what, actions]));
-      });
+      shown.forEach(function (i) { ul.appendChild(itemRow(i)); });
       listHost.appendChild(ul);
       var bar = el("div", { class: "panel-actions" });
       if (all.length > LIMIT) {
@@ -270,7 +291,75 @@
       }
       listHost.appendChild(bar);
     }
-    renderAdd(); renderList();
+
+    // ----- month view: a grid of days (Monday first), with the selected day's items listed underneath -----
+    function moveTo(date, focus) {
+      ui.sel = date; ui.y = parseInt(date.slice(0, 4), 10); ui.m = parseInt(date.slice(5, 7), 10) - 1;
+      renderList();
+      if (focus) { var b = listHost.querySelector('.month-grid button[data-date="' + date + '"]'); if (b) b.focus(); }
+    }
+    function shiftMonth(delta) {
+      var d = new Date(ui.y, ui.m + delta, 1), day = Math.min(parseInt(ui.sel.slice(8, 10), 10), new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate());
+      return ymd(d.getFullYear(), d.getMonth(), day);
+    }
+    function renderMonth() {
+      var items = Hub.agenda(0, { all: true }), byDate = {};
+      items.forEach(function (i) { (byDate[i.date] = byDate[i.date] || []).push(i); });
+      var first = new Date(ui.y, ui.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(ui.y, ui.m + 1, 0).getDate();
+      if (ui.sel.slice(0, 7) !== ymd(ui.y, ui.m, 1).slice(0, 7)) ui.sel = ymd(ui.y, ui.m, 1);
+      var capId = "cal-cap-" + Math.floor(Math.random() * 1e6);
+      var bar = el("div", { class: "month-bar" });
+      function nav(label, aria, fn) { var b = el("button", { type: "button", class: "btn small secondary", "aria-label": aria, text: label }); b.addEventListener("click", fn); return b; }
+      bar.appendChild(nav("‹", "Previous month", function () { moveTo(shiftMonth(-1), false); }));
+      bar.appendChild(el("strong", { class: "month-title", id: capId, "aria-live": "polite", text: MONTHS[ui.m] + " " + ui.y }));
+      bar.appendChild(nav("›", "Next month", function () { moveTo(shiftMonth(1), false); }));
+      bar.appendChild(nav("Today", "Go to today", function () { moveTo(S.today(), true); }));
+      listHost.appendChild(bar);
+      var table = el("table", { class: "month-grid", role: "grid", "aria-labelledby": capId });
+      var hr = el("tr");
+      DAYS.forEach(function (d) { hr.appendChild(el("th", { scope: "col", text: d })); });
+      table.appendChild(el("thead", {}, [hr]));
+      var tbody = el("tbody"), row = el("tr");
+      for (var k = 0; k < lead; k++) row.appendChild(el("td", { class: "blank", "aria-hidden": "true" }));
+      for (var d = 1; d <= days; d++) {
+        var date = ymd(ui.y, ui.m, d), list = byDate[date] || [], isSel = date === ui.sel, isToday = date === S.today();
+        var btn = el("button", { type: "button", class: "day" + (isSel ? " is-selected" : "") + (isToday ? " is-today" : ""), "data-date": date, tabindex: isSel ? "0" : "-1", "aria-pressed": String(isSel),
+          "aria-label": longDay(date) + (isToday ? ", today" : "") + ", " + (list.length ? Hub.plural(list.length, "item", "items") : "nothing planned") });
+        btn.appendChild(el("span", { class: "day-num", text: String(d) }));
+        list.slice(0, 2).forEach(function (i) { btn.appendChild(el("span", { class: "cell-item", "aria-hidden": "true", text: i.title })); });
+        if (list.length > 2) btn.appendChild(el("span", { class: "cell-more", "aria-hidden": "true", text: "+" + (list.length - 2) + " more" }));
+        if (list.length) btn.appendChild(el("span", { class: "cell-count", "aria-hidden": "true", text: String(list.length) }));
+        row.appendChild(el("td", { role: "gridcell", class: list.length ? "has-items" : "" }, [btn]));
+        if (row.children.length === 7) { tbody.appendChild(row); row = el("tr"); }
+      }
+      if (row.children.length) { while (row.children.length < 7) row.appendChild(el("td", { class: "blank", "aria-hidden": "true" })); tbody.appendChild(row); }
+      table.appendChild(tbody);
+      table.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("button.day"); if (b) moveTo(b.getAttribute("data-date"), true); });
+      table.addEventListener("keydown", function (e) {
+        var b = e.target.closest && e.target.closest("button.day"); if (!b) return;
+        var cur = S.parseDate(b.getAttribute("data-date")), dow = (cur.getDay() + 6) % 7, n = null;
+        if (e.key === "ArrowLeft") n = S.addDays(b.getAttribute("data-date"), -1);
+        else if (e.key === "ArrowRight") n = S.addDays(b.getAttribute("data-date"), 1);
+        else if (e.key === "ArrowUp") n = S.addDays(b.getAttribute("data-date"), -7);
+        else if (e.key === "ArrowDown") n = S.addDays(b.getAttribute("data-date"), 7);
+        else if (e.key === "Home") n = S.addDays(b.getAttribute("data-date"), -dow);
+        else if (e.key === "End") n = S.addDays(b.getAttribute("data-date"), 6 - dow);
+        else if (e.key === "PageUp") { ui.sel = b.getAttribute("data-date"); n = shiftMonth(-1); }
+        else if (e.key === "PageDown") { ui.sel = b.getAttribute("data-date"); n = shiftMonth(1); }
+        if (n) { e.preventDefault(); moveTo(n, true); }
+      });
+      listHost.appendChild(table);
+      var dayItems = byDate[ui.sel] || [];
+      var detail = el("section", { class: "month-day", "aria-label": longDay(ui.sel) });
+      detail.appendChild(el("h3", { text: longDay(ui.sel) + (ui.sel === S.today() ? " (today)" : "") }));
+      if (!dayItems.length) detail.appendChild(el("p", { class: "muted", text: "Nothing planned for this day." }));
+      else { var ul = el("ul", { class: "agenda" }); dayItems.forEach(function (i) { ul.appendChild(itemRow(i)); }); detail.appendChild(ul); }
+      var addDay = el("button", { type: "button", class: "btn small secondary", text: "Add an event on " + Hub.fmtDate(ui.sel) });
+      addDay.addEventListener("click", function () { ui.adding = true; ui.editing = null; ui.prefill = ui.sel; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
+      detail.appendChild(addDay);
+      listHost.appendChild(detail);
+    }
+    renderView(); renderAdd(); renderList();
     return sec;
   };
 })();

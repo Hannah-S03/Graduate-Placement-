@@ -89,7 +89,7 @@
       links: { pinned: [], custom: [] },
       learning: { saved: {}, custom: [], training: {} },
       contacts: [], reflections: {}, achievements: [],
-      weeklyGoals: {}, calendar: [], updates: {}, celebrated: {}
+      weeklyGoals: {}, calendar: [], updates: {}, celebrated: {}, meetings: [], feedback: []
     };
   }
 
@@ -168,6 +168,17 @@
       var mood = Math.round(num(v.mood, 0, 5, 0));
       if (mood >= 1 || str(v.note, 280).trim()) s.updates[String(n)] = { mood: mood, note: str(v.note, 280), updated: dateStr(v.updated) };
     });
+    // 1:1 meetings: notes are private to this browser (and are left out of the scheme record)
+    s.meetings = mapList(raw.meetings, function (m) {
+      return {
+        id: idOf(m), date: dateStr(m.date), withWho: str(m.withWho, 120), title: str(m.title, 200), agenda: str(m.agenda, 4000), notes: str(m.notes, 8000), next: dateStr(m.next),
+        actions: mapList(m.actions, function (a) { return { id: idOf(a), text: str(a.text, 300).trim(), done: a.done === true, goalTitle: str(a.goalTitle, 200) }; }).filter(function (a) { return a.text; }).slice(0, 30)
+      };
+    }).filter(function (m) { return m.date; }).slice(0, 300);
+    // feedback received
+    s.feedback = mapList(raw.feedback, function (f) {
+      return { id: idOf(f), date: dateStr(f.date), from: str(f.from, 120), kind: oneOf(f.kind, ["positive", "develop"], "positive"), text: str(f.text, 3000).trim(), action: str(f.action, 1000), goalId: str(f.goalId, 60) };
+    }).filter(function (f) { return f.text; }).slice(0, 500);
     // celebrations already shown (so each one appears once): { "goal:<id>": true, "half": true, ... }
     if (isObj(raw.celebrated)) Object.keys(raw.celebrated).slice(0, 1000).forEach(function (k) { if (raw.celebrated[k] === true && str(k, 80)) s.celebrated[str(k, 80)] = true; });
     return s;

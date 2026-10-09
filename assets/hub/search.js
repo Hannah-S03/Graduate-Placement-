@@ -26,6 +26,10 @@
       Object.keys(st.reflections).forEach(function (wk) { var r = st.reflections[wk]; add("Reflections", "Week " + wk + " reflection", [r.learnt, r.wentWell, r.hard, r.focusNext], r.learnt || r.wentWell || "", "reflection.html"); });
       st.achievements.forEach(function (a) { add("Achievements", a.title, [a.did, a.impact, a.learnt].concat(a.skills || []), a.did || a.impact || a.type, "achievements.html"); });
       st.learning.custom.forEach(function (c) { add("Learning", c.title, [c.notes, c.type], c.notes || c.type || "Your own item", "learning.html"); });
+      st.meetings.forEach(function (m) {
+        add("Meetings", (m.title || "1:1") + " \u00B7 " + (Hub ? Hub.fmtDate(m.date) : m.date), [m.withWho, m.agenda, m.notes].concat(m.actions.map(function (x) { return x.text; })), m.withWho ? "With " + m.withWho : "1:1 meeting", "meetings.html#meetings");
+      });
+      st.feedback.forEach(function (f) { add("Feedback", "Feedback" + (f.from ? " from " + f.from : "") + " \u00B7 " + (Hub ? Hub.fmtDate(f.date) : f.date), [f.text, f.action], f.text, "meetings.html#feedback"); });
       st.contacts.forEach(function (c) { add("People and networks", c.name, [c.role, c.how, c.notes, c.email], c.role || "Your contact", "company.html#network"); });
     }
     var L = window.SITE_LEARNING || {};

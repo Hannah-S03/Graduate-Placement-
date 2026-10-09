@@ -13,6 +13,7 @@
     ["links.html", "Quick links", "links"],
     ["learning.html", "Learning", "learning"],
     ["company.html", "Company hub", "company"],
+    ["meetings.html", "Meetings", "meetings"],
     ["reflection.html", "Reflection", "reflection"],
     ["achievements.html", "Achievements", "achievements"]
   ];
@@ -25,6 +26,7 @@
     learning: ["M3.5 4.5H9a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5h-6z", "M20.5 4.5H15a3 3 0 0 0-3 3v12a2.5 2.5 0 0 1 2.5-2.5h6z"],
     company: ["M4 21V7l8-3.5L20 7v14", "M9.5 21v-5h5v5", "M8 10h2M14 10h2M8 13h2M14 13h2"],
     reflection: ["M4 20l4.2-1L19 8.2 15.8 5 5 15.8z", "M13.5 7.3l3.2 3.2"],
+    meetings: ["M4 5h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H4a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 4 5z", "M18.5 9.5H20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-.5V21l-3-2.5H12"],
     achievements: ["M12 3.5l2.6 5.4 5.9.8-4.3 4.2 1 5.9L12 16.9 6.8 19.8l1-5.9L3.5 9.7l5.9-.8z"],
     search: ["M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z", "M20 20l-4.8-4.8"],
     moon: ["M20 14.2A8 8 0 1 1 9.8 4a6.4 6.4 0 0 0 10.2 10.2z"],
