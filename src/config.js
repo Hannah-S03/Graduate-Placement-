@@ -1,9 +1,11 @@
 // Site settings. Edit this file to change the names and contact details shown across the hub.
 window.SITE_CONFIG = {
-  companyName: "Brightpath Technologies", // DUMMY (fictional company)
+  companyName: "Vesta Software Group",
   hubName: "Graduate Hub",
-  logo: "assets/logo.svg", // DUMMY placeholder. Replace the file (SVG or PNG) or point to your own; leave "" for no logo
-  logoAlt: "", // leave empty because the company name is shown next to the logo
+  logo: "assets/vesta-logo-white.png", // white version of the logo for the navy header (the original is assets/vesta-logo.png). Use "" for no logo
+  logoAlt: "Vesta Software Group", // read out by screen readers
+  logoShowsName: true, // true = the logo already contains the company name, so the header only adds "Graduate Hub" beside it
+  favicon: "assets/vesta-icon.png", // small icon in the browser tab; use "" for none
   programmeName: "Graduate Placement Programme",
   usingDummyData: true, // set to false once all content is real; this hides the sample-content banner
   // The dates of your graduate programme. They drive the progress bar at the top of My profile until a graduate

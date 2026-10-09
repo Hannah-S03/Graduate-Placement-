@@ -46,9 +46,11 @@
       }
       var header = el("header", { class: "site" });
       var wrap = el("div", { class: "wrap" });
-      var brand = el("a", { class: "brand", href: "index.html" });
-      if (CFG.logo) brand.appendChild(el("img", { class: "brand-logo", src: CFG.logo, alt: CFG.logoAlt || "", height: "28" }));
-      brand.appendChild(el("span", { text: (COMPANY.name || "") + " " + (CFG.hubName || "Graduate Hub") }));
+      var brand = el("a", { class: "brand" + (CFG.logo && CFG.logoShowsName ? " has-logo-name" : ""), href: "index.html" });
+      if (CFG.logo) brand.appendChild(el("img", { class: "brand-logo", src: CFG.logo, alt: CFG.logoAlt || "", height: "40" }));
+      // when the logo already shows the company name, only the hub name is written beside it
+      brand.appendChild(el("span", { text: CFG.logo && CFG.logoShowsName ? (CFG.hubName || "Graduate Hub") : (COMPANY.name || "") + " " + (CFG.hubName || "Graduate Hub") }));
+      if (CFG.favicon && !document.querySelector("link[rel~='icon']")) document.head.appendChild(el("link", { rel: "icon", type: "image/png", href: CFG.favicon }));
       wrap.appendChild(brand);
       var btn = el("button", { class: "menu-btn", type: "button", "aria-expanded": "false", "aria-controls": "main-nav", text: "Menu" });
       wrap.appendChild(btn);

@@ -2,7 +2,7 @@
 
 A personalised digital hub that supports graduates throughout their scheme. It brings company information, placement details, development goals, learning, professional networks and progress tracking together in one place.
 
-Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learning and wording are dummy data** (fictional company "Brightpath Technologies") until you replace them.
+Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learning and wording are dummy data** (the site is branded as Vesta Software Group, but every fact about the company, the people and the quotes is invented) until you replace them.
 
 ## What graduates can do
 
@@ -63,15 +63,21 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 
 The base text size is the `font-size: 14.5px` line on the `html` rule near the top of `assets/site.css`. Make it larger (for example `16px`) for roomier text, or smaller for a tighter page. Almost everything scales from it. Panel spacing is set on the `.panel` rule, and the page width in `--max`.
 
-## Adding your logo and branding
+## Logo and branding (Vesta Software Group)
 
-1. Put your logo file in the `assets` folder (SVG or PNG, about 28 px tall works best) and set `logo: "assets/your-file.svg"` in `src/config.js`. Set `logo: ""` to show no logo. The current `assets/logo.svg` is a placeholder.
-2. Change the brand colours below (`--navy`, `--navy-mid`, `--brand`, `--accent`).
-3. Set `companyName` and `hubName` in `src/config.js`.
+The site uses the Vesta Software Group logo and colours.
+
+| File | What it is for |
+|---|---|
+| `assets/vesta-logo-white.png` | The logo in white (with the gold kept), transparent, for the navy header. This is what `logo` in `src/config.js` points to. |
+| `assets/vesta-logo.png` | The original logo (navy and gold on white), for white backgrounds and documents. |
+| `assets/vesta-icon.png` | The small V mark used as the browser-tab icon (`favicon` in `src/config.js`). |
+
+To change them: replace the files (a transparent PNG about 40 px tall on screen works best) or point `logo` and `favicon` in `src/config.js` at new files. Set `logo: ""` for no logo. `logoShowsName: true` means the logo already contains the company name, so the header writes only "Graduate Hub" beside it; set it to `false` to write the company name too. `logoAlt` is what screen readers read out. Set `companyName` and `hubName` in `src/config.js`, and the company name in `src/data/company.js`.
 
 ## Changing the colours
 
-All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The main ones are `--navy` and `--navy-mid` (the secondary colour: header, footer, the programme card and the dark tiles), `--brand` (buttons and links) and `--accent` (the small hint of gold, RGB 212, 175, 55: thin lines, the progress bar fill and tile markers; decoration only, so never use it for text on white). To match company branding, change `--navy`, `--navy-mid`, `--brand` and `--accent`. Keep text readable against its background (aim for good contrast).
+All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The Vesta values are: `--navy` `#1C3B54` (RGB 28, 59, 84: header, footer, the programme card and the dark tiles), `--navy-mid` `#2B5A7E` (the lighter blue used in gradients), `--brand` `#1C3B54` (buttons and links) and `--accent` `#DEC100` (Vesta gold, RGB 222, 193, 0: thin lines, progress bar fills and tile markers; decoration only, so never use it for text on white). Keep text readable against its background (aim for good contrast).
 
 ## Before going public
 
