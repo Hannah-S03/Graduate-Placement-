@@ -366,7 +366,9 @@ select.task-status.s-completed { background-color: #d9f3e6; color: #0b5a35; bord
 @media print { .goal-body[hidden], .task-comments[hidden] { display: block !important; } .more-menu { display: none; } }
 
 /* tile dashboard: greeting, the row of tiles under it, and the navy tracker tile */
-.hello { margin: 0 0 12px; color: var(--muted); font-size: 1rem; }
+.hello { display: flex; flex-direction: column; gap: 4px; margin: 0 0 14px; padding: 22px 26px; border-radius: 24px; background: var(--navy) linear-gradient(120deg, var(--navy) 0%, var(--navy-mid) 100%); color: #fff; }
+.hello-big { font-size: clamp(1.9rem, 4.2vw, 2.9rem); line-height: 1.05; font-weight: 800; letter-spacing: -.025em; }
+.hello-date { color: var(--accent); font-size: .9rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .hello[hidden] { display: none; }
 .stat-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; margin: 0 0 14px; }
 .stat-row > .panel.programme { margin: 0; border-radius: 24px; padding: 18px 22px; min-height: 150px; align-content: space-between; box-shadow: none; }
@@ -405,3 +407,18 @@ select.task-status { border-radius: 999px; }
 .stat-row > .panel.programme:not(:only-child) .muted { text-align: left; margin-top: 8px; }
 .tile-tint b { font-size: 1.2rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 @media (max-width: 700px) { .tile-tint b { font-size: 1.05rem; } }
+
+/* more navy on the home page: tasks tile and the profile strip */
+.tile-navy-mid { color: #fff; background: var(--navy-mid) linear-gradient(135deg, var(--navy-mid) 0%, #2a58b5 100%); border: 0; }
+.tile-navy-mid:hover { color: #fff; }
+.tile-navy-mid small { color: #f0dc9a; }
+.tile-navy-mid span { color: #e4ebfa; }
+.panel.profile-card { background: var(--navy) linear-gradient(120deg, var(--navy) 0%, var(--navy-mid) 100%); color: #fff; border: 0; }
+.profile-card > h2, .profile-card strong { color: #fff; }
+.profile-card .muted { color: #d5def2; }
+.profile-card .avatar { background: var(--accent); color: var(--navy); }
+.profile-card .btn.secondary { color: #fff; border-color: rgba(255, 255, 255, .6); background: transparent; }
+.profile-card .btn.secondary:hover { background: rgba(255, 255, 255, .14); color: #fff; border-color: #fff; }
+.profile-card :focus-visible { outline-color: #fff; }
+@media (max-width: 700px) { .hello { padding: 16px 18px; } .hello-big { font-size: 1.85rem; } }
+@media print { .hello, .panel.profile-card { background: #fff; color: #000; border: 1px solid #999; } .hello-date, .profile-card > h2, .profile-card strong, .profile-card .muted { color: #000; } .profile-card .btn { display: none; } }

@@ -243,7 +243,7 @@
         a.set = function (v, sb) { value.textContent = v; sub.textContent = sb; };
         return a;
       }
-      var tasks = tile("tile-light", "journey.html", "Tasks completed");
+      var tasks = tile("tile-navy-mid", "journey.html", "Tasks completed");
       var next = tile("tile-tint", "index.html#calendar", "Next up");
       var attention = tile("tile-navy", "index.html#reminders", "Needs attention");
       function refresh() {
@@ -261,15 +261,19 @@
       return [tasks, next, attention];
     }
 
-    function greetingText() {
+    // Large greeting in a navy banner: "Good morning, Priya" with the date underneath.
+    function fillGreeting() {
       var h = new Date().getHours(), part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
       var first = S.state.profile.name.trim().split(/\s+/)[0];
-      return part + ", " + first + " \u00B7 " + S.parseDate(S.today()).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+      hello.textContent = "";
+      hello.appendChild(el("span", { class: "hello-big", text: part + ", " + first }));
+      hello.appendChild(el("span", { class: "visually-hidden", text: " \u00B7 " }));
+      hello.appendChild(el("span", { class: "hello-date", text: S.parseDate(S.today()).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }));
     }
 
     function dashboard() {
       Hub.clearListeners();
-      hello.textContent = greetingText(); hello.hidden = false;
+      fillGreeting(); hello.hidden = false;
       statTiles().forEach(function (n) { top.appendChild(n); });
       var p = S.state.profile;
       var card = Hub.panel(p.name, "profile-card");
