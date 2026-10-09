@@ -11,7 +11,6 @@
     var editing = false;
     var cfg = window.SITE_CONFIG || {};
     Hub.notices(t);
-    t.appendChild(hello);
     t.appendChild(top);
     t.appendChild(status);
     t.appendChild(body);
@@ -243,7 +242,7 @@
         a.set = function (v, sb) { value.textContent = v; sub.textContent = sb; };
         return a;
       }
-      var tasks = tile("tile-navy-mid", "journey.html", "Tasks completed");
+      var tasks = tile("tile-light", "journey.html", "Tasks completed");
       var next = tile("tile-tint", "index.html#calendar", "Next up");
       var attention = tile("tile-navy", "index.html#reminders", "Needs attention");
       function refresh() {
@@ -274,6 +273,8 @@
     function dashboard() {
       Hub.clearListeners();
       fillGreeting(); hello.hidden = false;
+      var prog = top.querySelector(".programme");
+      if (prog) { prog.classList.add("has-hello"); prog.insertBefore(hello, prog.firstChild); }
       statTiles().forEach(function (n) { top.appendChild(n); });
       var p = S.state.profile;
       var card = Hub.panel(p.name, "profile-card");
@@ -293,12 +294,12 @@
       function add(sec, start, cls, opts) { opts = opts || {}; opts.start = start; Hub.collapsible(sec, opts); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
       add(Hub.homePanels.weekly(status), "open");
       add(Hub.homePanels.update(status), "closed", "", { summary: Hub.homePanels.updateLine, openLabel: "Write my update" });
-      add(remindersPanel(), "open", "span-2");
-      add(Hub.homePanels.calendar(status), "open", "span-3");
+      add(remindersPanel(), "open");
+      add(Hub.homePanels.calendar(status), "open", "span-4");
       add(progressPanel(), "closed-on-phone", "tile-navy");
       add(pinnedPanel(), "closed-on-phone");
       add(goalsPanel(), "closed-on-phone");
-      add(achievementsPanel(), "closed-on-phone", "span-2");
+      add(achievementsPanel(), "closed-on-phone");
       body.appendChild(grid);
       var data = dataPanel();
       Hub.collapsible(data, { start: "closed" });
