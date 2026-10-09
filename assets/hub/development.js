@@ -73,6 +73,7 @@
       toggle.addEventListener("click", function () {
         m.status = m.status === "achieved" ? "planned" : "achieved";
         Hub.save(status, m.status === "achieved" ? "Milestone achieved. Well done!" : "Milestone marked as planned."); renderAll(); focusMs(m.id);
+        if (m.status === "achieved") Hub.celebrateOnce("milestone:" + m.id, "Milestone achieved", "\u201C" + m.title + "\u201D is done. Well done!", document.querySelector('[data-id="' + m.id + '"]'));
       });
       var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit " + m.title });
       ed.addEventListener("click", function () { ui.editing = m.id; ui.adding = false; renderMs(); focusMs(m.id); });

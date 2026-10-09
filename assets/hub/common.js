@@ -219,6 +219,32 @@
     return menu;
   };
 
+  // ----- celebrations -----
+  // A small message at the bottom of the screen (read out politely by screen readers) and an optional gold pulse on a card.
+  // Each celebration is shown once: Hub.celebrateOnce("goal:abc", "Goal complete", "You finished ...", cardNode).
+  function toastArea() {
+    var a = document.getElementById("toast-area");
+    if (!a) { a = el("div", { class: "toast-area", id: "toast-area", role: "status", "aria-live": "polite" }); document.body.appendChild(a); }
+    return a;
+  }
+  Hub.celebrate = function (title, text, node) {
+    var toast = el("div", { class: "toast" });
+    var msg = el("div", {}, [el("strong", { text: title }), el("span", { text: text })]);
+    var close = el("button", { type: "button", class: "btn small secondary", text: "Dismiss" });
+    function gone() { if (toast.parentNode) toast.parentNode.removeChild(toast); }
+    close.addEventListener("click", gone);
+    toast.appendChild(msg); toast.appendChild(close);
+    toastArea().appendChild(toast);
+    window.setTimeout(gone, 9000);
+    if (node) { node.classList.remove("celebrate-pulse"); void node.offsetWidth; node.classList.add("celebrate-pulse"); window.setTimeout(function () { node.classList.remove("celebrate-pulse"); }, 3600); }
+    return toast;
+  };
+  Hub.celebrateOnce = function (key, title, text, node) {
+    if (S.state.celebrated[key]) return null;
+    S.state.celebrated[key] = true; S.save();
+    return Hub.celebrate(title, text, node);
+  };
+
   // A delete (or other risky) button that asks "Are you sure?" on the page. opts: { label, ariaLabel, message, confirmLabel, onConfirm }
   Hub.confirmButton = function (opts) {
     var holder = el("span", { class: "confirm-holder" });

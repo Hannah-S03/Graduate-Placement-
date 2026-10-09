@@ -9,13 +9,20 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 | Page | What it does |
 |---|---|
 | **My profile** (home) | The programme progress bar, **weekly goals**, a small **progress update** (with a copy-to-share button), a **calendar of upcoming events and reminders** (with calendar files), overall progress, reminders, pinned links, and backup and restore |
-| **My journey** | Add development, career and placement goals and update their progress |
+| **My journey** | Add development, career and placement goals; each goal holds tasks marked not started, in progress or completed, with comments |
 | **My development** | Record milestones and rate skills at the start and now |
 | **Quick links** | Pin company systems and resources, and add your own |
 | **Learning** | Required training with reminders (and calendar files), saved courses and opportunities |
 | **Company hub** | Company information, the central team, placement details, key contacts and your own network |
 | **Reflection** | A note on what you learnt each week |
 | **Achievements** | A portfolio of projects and accomplishments, with a printable and downloadable scheme record |
+
+## Search, dark mode and celebrations
+
+- **Search:** the magnifying-glass button in the header (or press **/**) opens a search box. It looks through your goals, tasks, comments, milestones, weekly goals, calendar events, reflections, achievements, learning, quick links, contacts and networks, and the company, team and help text. Everything is searched in the browser.
+- **Dark mode:** the moon / sun button in the header switches between the light and dark theme. The choice is saved in this browser (`gradHub.theme`); without a choice the device's setting is followed. Printing is always light.
+- **Page banners and menu icons:** each page opens with a navy banner showing its title and summary, and the menu has a small icon beside each page.
+- **Celebrations:** a short message (and a brief gold highlight, which is switched off for people who prefer reduced motion) appears once when a goal is finished or a milestone is achieved, and a dismissible note appears on My profile when the programme is half way and when it is complete.
 
 ## Where is the information saved?
 
@@ -45,11 +52,12 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 |---|---|
 | `*.html` | The pages |
 | `assets/site.css` | All styles, including the tile dashboard theme (light grey and white, navy, a hint of gold) and the print layout |
-| `assets/site.js` | Menu, footer and the company, objectives, skills and FAQ sections |
+| `assets/site.js` | Header (menu, icons, search and dark-mode buttons), page banners, footer and the company, objectives, skills and FAQ sections |
+| `assets/theme.js` | Sets the light or dark theme before the page is drawn |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
-| `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
+| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages), `search.js` (the header search) and one script per section |
 | `src/config.js` | Names, programme start and end dates, contact email, dummy-data banner switch |
-| `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks`, `events` |
+| `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 
 ## Replacing the dummy content
 

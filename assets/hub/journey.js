@@ -128,8 +128,10 @@
       var sel = el("select", { class: "task-status s-" + t.status, "aria-label": "Status of task: " + t.text });
       Object.keys(Hub.taskStatusLabel).forEach(function (k) { var o = el("option", { value: k, text: Hub.taskStatusLabel[k] }); if (k === t.status) o.selected = true; sel.appendChild(o); });
       sel.addEventListener("change", function () {
+        var before = Hub.goalStatus(g);
         t.status = sel.value; Hub.save(status, "Task marked " + Hub.taskStatusLabel[t.status].toLowerCase() + ".");
         renderAll(); focusTask(t.id, "select");
+        if (before !== "done" && Hub.goalStatus(g) === "done") Hub.celebrateOnce("goal:" + g.id, "Goal complete", "You finished \u201C" + g.title + "\u201D. Well done!", list.querySelector('[data-id="' + g.id + '"]'));
       });
       line.appendChild(sel);
       var panel = el("div", { class: "task-comments", id: "tc-" + t.id });

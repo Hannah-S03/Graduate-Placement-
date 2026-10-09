@@ -275,6 +275,15 @@
       fillGreeting(); hello.hidden = false;
       var prog = top.querySelector(".programme");
       if (prog) { prog.classList.add("has-hello"); prog.insertBefore(hello, prog.firstChild); }
+      // half way and programme complete: a dismissible note inside the hero card, shown until dismissed
+      var pl = S.programme(), ckey = pl.status === "after" ? "complete" : (pl.status === "during" && pl.pct >= 50 ? "half" : "");
+      if (prog && ckey && !S.state.celebrated[ckey]) {
+        var note = el("div", { class: "celebrate-note", role: "status" }, [el("span", { text: ckey === "complete" ? "Programme complete. Well done on finishing the whole scheme!" : "You are half way through the programme. Well done!" })]);
+        var dismiss = el("button", { type: "button", class: "btn small secondary", text: "Dismiss" });
+        dismiss.addEventListener("click", function () { S.state.celebrated[ckey] = true; if (ckey === "complete") S.state.celebrated.half = true; S.save(); if (note.parentNode) note.parentNode.removeChild(note); });
+        note.appendChild(dismiss); prog.appendChild(note);
+        prog.classList.add("celebrate-pulse"); window.setTimeout(function () { prog.classList.remove("celebrate-pulse"); }, 3600);
+      }
       statTiles().forEach(function (n) { top.appendChild(n); });
       var p = S.state.profile;
       var card = Hub.panel(p.name, "profile-card");
