@@ -44,7 +44,7 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | Path | What it is |
 |---|---|
 | `*.html` | The pages |
-| `assets/site.css` | All styles, including the light grey / navy theme and the print layout |
+| `assets/site.css` | All styles, including the tile dashboard theme (light grey and white, navy, a hint of gold) and the print layout |
 | `assets/site.js` | Menu, footer and the company, objectives, skills and FAQ sections |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
 | `assets/hub/*.js` | `common.js` (shared helpers) and one script per section |
@@ -66,12 +66,12 @@ The base text size is the `font-size: 14.5px` line on the `html` rule near the t
 ## Adding your logo and branding
 
 1. Put your logo file in the `assets` folder (SVG or PNG, about 28 px tall works best) and set `logo: "assets/your-file.svg"` in `src/config.js`. Set `logo: ""` to show no logo. The current `assets/logo.svg` is a placeholder.
-2. Change the three brand colours below (`--navy`, `--brand`, `--accent`).
+2. Change the brand colours below (`--navy`, `--navy-mid`, `--brand`, `--accent`).
 3. Set `companyName` and `hubName` in `src/config.js`.
 
 ## Changing the colours
 
-All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The main ones are `--navy` (header, footer and the programme card), `--brand` (buttons and links) and `--accent` (the thin gold lines; decoration only, so never use it for text). To match company branding, change `--navy`, `--brand` and `--accent`. Keep text readable against its background (aim for good contrast).
+All colours are in the `:root` block at the top of `assets/site.css`. Change a value, save, then refresh the browser with Ctrl + F5. The main ones are `--navy` and `--navy-mid` (the secondary colour: header, footer, the programme card and the dark tiles), `--brand` (buttons and links) and `--accent` (the small hint of gold, RGB 212, 175, 55: thin lines, the progress bar fill and tile markers; decoration only, so never use it for text on white). To match company branding, change `--navy`, `--navy-mid`, `--brand` and `--accent`. Keep text readable against its background (aim for good contrast).
 
 ## Before going public
 

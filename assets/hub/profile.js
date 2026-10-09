@@ -5,11 +5,13 @@
 
   R.profile = function (t) {
     var status = Hub.status();
-    var top = el("div");
+    var hello = el("p", { class: "hello" });
+    var top = el("div", { class: "stat-row" });
     var body = el("div");
     var editing = false;
     var cfg = window.SITE_CONFIG || {};
     Hub.notices(t);
+    t.appendChild(hello);
     t.appendChild(top);
     t.appendChild(status);
     t.appendChild(body);
@@ -104,6 +106,7 @@
 
     function remindersPanel() {
       var sec = Hub.panel("Reminders");
+      sec.id = "reminders";
       var host = el("div"), all = false;
       sec.appendChild(host);
       function refresh() {
@@ -230,8 +233,44 @@
       return sec;
     }
 
+    // Three summary tiles beside the programme card: tasks completed, the next thing coming up, and overdue items.
+    function statTiles() {
+      function tile(cls, href, label) {
+        var a = el("a", { class: "tile " + cls, href: href });
+        a.appendChild(el("small", { text: label }));
+        var value = el("b"), sub = el("span");
+        a.appendChild(value); a.appendChild(sub);
+        a.set = function (v, sb) { value.textContent = v; sub.textContent = sb; };
+        return a;
+      }
+      var tasks = tile("tile-light", "journey.html", "Tasks completed");
+      var next = tile("tile-tint", "index.html#calendar", "Next up");
+      var attention = tile("tile-navy", "index.html#reminders", "Needs attention");
+      function refresh() {
+        var total = 0, done = 0;
+        S.state.goals.forEach(function (g) { var c = Hub.taskCounts(g); total += c.total; done += c.completed; });
+        if (total) tasks.set(done + " / " + total, "across " + Hub.plural(S.state.goals.length, "goal", "goals")); else tasks.set("0", S.state.goals.length ? "No tasks yet" : "Add goals on My journey");
+        var n = Hub.agenda(1)[0];
+        if (n) next.set(n.title, Hub.dayLabel(n.date) + (n.time ? " \u00B7 " + n.time : "")); else next.set("Nothing yet", "Add an event to your calendar");
+        var overdue = Hub.reminders().filter(function (r) { return r.kind === "danger"; }).length;
+        attention.set(String(overdue), overdue ? (overdue === 1 ? "overdue item" : "overdue items") : "Nothing overdue");
+        next.classList.toggle("tile-empty", !n);
+      }
+      refresh();
+      Hub.onChange("stats", refresh);
+      return [tasks, next, attention];
+    }
+
+    function greetingText() {
+      var h = new Date().getHours(), part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+      var first = S.state.profile.name.trim().split(/\s+/)[0];
+      return part + ", " + first + " \u00B7 " + S.parseDate(S.today()).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+    }
+
     function dashboard() {
       Hub.clearListeners();
+      hello.textContent = greetingText(); hello.hidden = false;
+      statTiles().forEach(function (n) { top.appendChild(n); });
       var p = S.state.profile;
       var card = Hub.panel(p.name, "profile-card");
       card.heading.setAttribute("tabindex", "-1");
@@ -250,12 +289,12 @@
       function add(sec, start, cls, opts) { opts = opts || {}; opts.start = start; Hub.collapsible(sec, opts); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
       add(Hub.homePanels.weekly(status), "open");
       add(Hub.homePanels.update(status), "closed", "", { summary: Hub.homePanels.updateLine, openLabel: "Write my update" });
-      add(remindersPanel(), "open");
-      add(Hub.homePanels.calendar(status), "open", "span-2");
-      add(progressPanel(), "closed-on-phone");
+      add(remindersPanel(), "open", "span-2");
+      add(Hub.homePanels.calendar(status), "open", "span-3");
+      add(progressPanel(), "closed-on-phone", "tile-navy");
       add(pinnedPanel(), "closed-on-phone");
       add(goalsPanel(), "closed-on-phone");
-      add(achievementsPanel(), "closed-on-phone");
+      add(achievementsPanel(), "closed-on-phone", "span-2");
       body.appendChild(grid);
       var data = dataPanel();
       Hub.collapsible(data, { start: "closed" });
@@ -263,7 +302,7 @@
     }
 
     function render() {
-      top.textContent = "";
+      top.textContent = ""; hello.hidden = true;
       top.appendChild(programmePanel());
       body.textContent = "";
       if (!S.state.profile.name) setup();
