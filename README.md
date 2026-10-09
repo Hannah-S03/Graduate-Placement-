@@ -54,7 +54,7 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 ## Replacing the dummy content
 
 0. **Programme dates:** set `programmeStart` and `programmeEnd` in `src/config.js` (format `2026-09-01`). They drive the progress bar at the top of My profile and prefill each graduate's dates. The bar shows the current week out of the total weeks, so week 6 of 12 is 50%.
-1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date). In `events.js`, list the real programme events (`date` as `2026-10-15`, optional `time` as `14:00`, `minutes`, `where`, `description`); leave `time` out for an all-day event.
+1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date).
 2. Edit `src/config.js`: company name, contact email, placement length.
 3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 4. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.

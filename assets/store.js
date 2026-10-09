@@ -104,7 +104,13 @@
         id: idOf(g), type: oneOf(g.type, ["development", "career", "placement"], "development"),
         title: str(g.title, 200), description: str(g.description), target: dateStr(g.target),
         progress: Math.round(num(g.progress, 0, 100, 0)), created: dateStr(g.created),
-        history: mapList(g.history, function (h) { return { date: dateStr(h.date), progress: Math.round(num(h.progress, 0, 100, 0)), note: str(h.note, 1000) }; })
+        // tasks: each has a status and a list of dated comments. With tasks, a goal's progress is the share completed.
+        tasks: mapList(g.tasks, function (t) {
+          return {
+            id: idOf(t), text: str(t.text, 200).trim(), status: oneOf(t.status, ["notstarted", "inprogress", "completed"], "notstarted"),
+            comments: mapList(t.comments, function (c) { return { id: idOf(c), date: dateStr(c.date), text: str(c.text, 500).trim() }; }).filter(function (c) { return c.text; }).slice(0, 100)
+          };
+        }).filter(function (t) { return t.text; }).slice(0, 50)
       };
     }).filter(function (g) { return g.title; });
     s.milestones = mapList(raw.milestones, function (m) {
@@ -154,7 +160,7 @@
     });
     s.calendar = mapList(raw.calendar, function (c) {
       var time = typeof c.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(c.time) ? c.time : "";
-      return { id: idOf(c), title: str(c.title, 200).trim(), date: dateStr(c.date), time: time, note: str(c.note, 1000) };
+      return { id: idOf(c), title: str(c.title, 200).trim(), date: dateStr(c.date), time: time, where: str(c.where, 200), note: str(c.note, 1000) };
     }).filter(function (c) { return c.title && c.date; }).slice(0, 500);
     if (isObj(raw.updates)) Object.keys(raw.updates).forEach(function (k) {
       var n = parseInt(k, 10), v = raw.updates[k];

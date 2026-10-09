@@ -183,7 +183,7 @@
     var sec = Hub.panel("Calendar and upcoming events", "calendar");
     sec.id = "calendar";
     var addHost = el("div"), listHost = el("div");
-    var ui = { adding: false, all: false };
+    var ui = { adding: false, editing: null, all: false };
     sec.appendChild(addHost); sec.appendChild(listHost);
 
     function icsEvent(i) { return { uid: i.id, date: i.date, time: i.time, minutes: i.minutes, title: i.title, description: i.desc, location: i.where }; }
@@ -191,23 +191,27 @@
     function renderAdd() {
       addHost.textContent = "";
       if (!ui.adding) {
-        var b = el("button", { type: "button", class: "btn small", text: "Add a reminder" });
-        b.addEventListener("click", function () { ui.adding = true; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
+        var b = el("button", { type: "button", class: "btn small", text: "Add an event" });
+        b.addEventListener("click", function () { ui.adding = true; ui.editing = null; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
         addHost.appendChild(b);
         return;
       }
+      var cur = ui.editing ? S.state.calendar.filter(function (x) { return x.id === ui.editing; })[0] : null;
       addHost.appendChild(Hub.form({
         fields: [
-          { name: "title", label: "Reminder", required: true, maxlength: 200 },
+          { name: "title", label: "Event or reminder", required: true, maxlength: 200 },
           { name: "date", label: "Date", type: "date", required: true },
-          { name: "time", label: "Time", type: "time", hint: "Leave empty for an all-day reminder." },
+          { name: "time", label: "Time", type: "time", hint: "Leave empty for an all-day event." },
+          { name: "where", label: "Place", maxlength: 200, hint: "Optional." },
           { name: "note", label: "Note", type: "textarea", rows: 2 }
         ],
-        values: { date: S.today() }, submitLabel: "Add reminder",
-        onCancel: function () { ui.adding = false; renderAdd(); },
+        values: cur || { date: S.today() }, submitLabel: cur ? "Save event" : "Add event",
+        onCancel: function () { ui.adding = false; ui.editing = null; renderAdd(); },
         onSubmit: function (v) {
-          S.state.calendar.push({ id: S.id(), title: v.title, date: v.date, time: v.time, note: v.note });
-          ui.adding = false; Hub.save(status, "Reminder added."); renderAdd(); renderList(); Hub.changed("calendar");
+          if (cur) { cur.title = v.title; cur.date = v.date; cur.time = v.time; cur.where = v.where; cur.note = v.note; }
+          else S.state.calendar.push({ id: S.id(), title: v.title, date: v.date, time: v.time, where: v.where, note: v.note });
+          var msg = cur ? "Event updated." : "Event added.";
+          ui.adding = false; ui.editing = null; Hub.save(status, msg); renderAdd(); renderList(); Hub.changed("calendar");
         }
       }));
     }
@@ -215,7 +219,7 @@
     function renderList() {
       listHost.textContent = "";
       var all = Hub.agenda(), LIMIT = 5, shown = ui.all ? all.slice(0, 40) : all.slice(0, LIMIT);
-      if (!shown.length) { listHost.appendChild(el("p", { text: "Nothing coming up. Add a reminder, and programme events will appear here." })); return; }
+      if (!shown.length) { listHost.appendChild(el("p", { text: "Nothing coming up yet. Add an event or reminder, and dates from your goals, training and learning will appear here too." })); return; }
       var ul = el("ul", { class: "agenda" });
       shown.forEach(function (i) {
         var label = Hub.dayLabel(i.date), relative = /^(Today|Tomorrow|In )/.test(label);
@@ -236,9 +240,13 @@
           actions.appendChild(cal);
         }
         if (i.mine) {
-          actions.appendChild(Hub.confirmButton({ label: "Delete", ariaLabel: "Delete reminder " + i.title, message: "Delete this reminder?", onConfirm: function () {
+          var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit event " + i.title });
+          ed.addEventListener("click", function () { ui.adding = true; ui.editing = i.id; renderAdd(); var f = addHost.querySelector("input"); if (f) f.focus(); });
+          actions.appendChild(ed);
+          actions.appendChild(Hub.confirmButton({ label: "Delete", ariaLabel: "Delete event " + i.title, message: "Delete this event?", onConfirm: function () {
             S.state.calendar = S.state.calendar.filter(function (x) { return x.id !== i.id; });
-            Hub.save(status, "Reminder deleted."); renderList(); Hub.changed("calendar");
+            if (ui.editing === i.id) { ui.adding = false; ui.editing = null; renderAdd(); }
+            Hub.save(status, "Event deleted."); renderList(); Hub.changed("calendar");
             var f = addHost.querySelector("button, input"); if (f) f.focus();
           } }));
         }
@@ -253,7 +261,7 @@
       }
       var withIcs = all.filter(function (i) { return i.ics; });
       if (withIcs.length) {
-        var allBtn = el("button", { type: "button", class: "btn small secondary", text: "Add all upcoming events and reminders to my calendar" });
+        var allBtn = el("button", { type: "button", class: "btn small secondary", text: "Add all upcoming events to my calendar" });
         allBtn.addEventListener("click", function () {
           Hub.download("upcoming-events.ics", Hub.buildIcs(withIcs.map(icsEvent)), "text/calendar");
           status.say("Calendar file downloaded with " + Hub.plural(withIcs.length, "event", "events") + ".", false);

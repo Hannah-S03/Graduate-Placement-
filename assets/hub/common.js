@@ -162,7 +162,7 @@
 
   // opts: { fields, values, submitLabel, cancelLabel, onSubmit(values) -> {name: message}|undefined, onCancel }
   Hub.form = function (opts) {
-    var form = el("form", { class: "hub-form", novalidate: "novalidate" });
+    var form = el("form", { class: "hub-form" + (opts.extraClass ? " " + opts.extraClass : ""), novalidate: "novalidate" });
     var fields = opts.fields.map(function (d) { return Hub.field(d, opts.values ? opts.values[d.name] : undefined); });
     fields.forEach(function (f) { form.appendChild(f.wrap); });
     var row = el("div", { class: "row" });
@@ -224,7 +224,18 @@
     return el("a", { href: url, target: "_blank", rel: "noopener noreferrer", class: cls || false, text: text });
   };
 
-  Hub.goalStatus = function (g) { return g.progress >= 100 ? "done" : g.progress > 0 ? "inprogress" : "notstarted"; };
+  // A goal is made of tasks. With tasks, progress is the share completed; with none it falls back to the old saved percentage.
+  Hub.taskCounts = function (g) {
+    var tasks = g.tasks || [];
+    return { total: tasks.length, completed: tasks.filter(function (t) { return t.status === "completed"; }).length, inprogress: tasks.filter(function (t) { return t.status === "inprogress"; }).length };
+  };
+  Hub.goalProgress = function (g) { var c = Hub.taskCounts(g); return c.total ? Math.round((c.completed / c.total) * 100) : g.progress; };
+  Hub.goalStatus = function (g) {
+    var c = Hub.taskCounts(g);
+    if (!c.total) return g.progress >= 100 ? "done" : g.progress > 0 ? "inprogress" : "notstarted";
+    return c.completed === c.total ? "done" : c.completed || c.inprogress ? "inprogress" : "notstarted";
+  };
+  Hub.taskStatusLabel = { notstarted: "Not started", inprogress: "In progress", completed: "Completed" };
   Hub.goalStatusLabel = { notstarted: "Not started", inprogress: "In progress", done: "Done" };
 
   // ----- training, progress and reminders -----
@@ -247,7 +258,7 @@
   // Overall progress: the average of the parts that have something in them (goals, milestones, required training).
   Hub.progressSummary = function () {
     var st = S.state, parts = [];
-    var goalsPct = st.goals.length ? st.goals.reduce(function (a, g) { return a + g.progress; }, 0) / st.goals.length : null;
+    var goalsPct = st.goals.length ? st.goals.reduce(function (a, g) { return a + Hub.goalProgress(g); }, 0) / st.goals.length : null;
     var achieved = st.milestones.filter(function (m) { return m.status === "achieved"; }).length;
     var msPct = st.milestones.length ? (achieved / st.milestones.length) * 100 : null;
     var tr = Hub.training();
@@ -273,7 +284,7 @@
       else if (d <= 7) out.push({ level: 1, kind: "warn", text: t.title + " training is due " + (d === 0 ? "today" : "in " + Hub.plural(d, "day", "days")) + ".", href: "learning.html" });
     });
     st.goals.forEach(function (g) {
-      if (g.progress >= 100 || !g.target) return;
+      if (Hub.goalStatus(g) === "done" || !g.target) return;
       var d = S.daysBetween(today, g.target);
       if (d < 0) out.push({ level: 0, kind: "danger", text: "Goal “" + g.title + "” was due " + Hub.fmtDate(g.target) + ".", href: "journey.html" });
       else if (d <= 14) out.push({ level: 2, kind: "warn", text: "Goal “" + g.title + "” is due " + (d === 0 ? "today" : "in " + Hub.plural(d, "day", "days")) + ".", href: "journey.html" });
@@ -291,7 +302,7 @@
     });
     st.calendar.forEach(function (c) {
       var d = S.daysBetween(today, c.date);
-      if (d === 0 || d === 1) out.push({ level: 1, kind: "warn", text: "Reminder: " + c.title + " is " + (d === 0 ? "today" : "tomorrow") + (c.time ? " at " + c.time : "") + ".", href: "index.html#calendar" });
+      if (d === 0 || d === 1) out.push({ level: 1, kind: "warn", text: "Event: " + c.title + " is " + (d === 0 ? "today" : "tomorrow") + (c.time ? " at " + c.time : "") + ".", href: "index.html#calendar" });
     });
     if (pl.status === "during" && !st.reflections[String(pl.week)]) {
       out.push({ level: 3, kind: "info", text: "Write your reflection for week " + pl.week + ".", href: "reflection.html" });
@@ -375,22 +386,19 @@
     return S.parseDate(date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
   };
 
-  // Everything coming up (today or later), soonest first: programme events, the graduate's own reminders,
+  // Everything coming up (today or later), soonest first: the graduate's own events and reminders,
   // training due dates, goal target dates, planned milestones and planned learning. ics: true = can go in a calendar file.
   Hub.agenda = function (limit) {
     var st = S.state, today = S.today(), items = [];
-    ((window.SITE_EVENTS) || []).forEach(function (e) {
-      if (S.dateStr(e.date) && e.date >= today) items.push({ id: "ev-" + e.id, kind: "Programme event", title: e.title, date: e.date, time: e.time || "", minutes: e.minutes, where: e.where || "", desc: e.description || "", ics: true });
-    });
     st.calendar.forEach(function (c) {
-      if (c.date >= today) items.push({ id: c.id, kind: "My reminder", title: c.title, date: c.date, time: c.time, where: "", desc: c.note, ics: true, mine: true });
+      if (c.date >= today) items.push({ id: c.id, kind: "My event", title: c.title, date: c.date, time: c.time, where: c.where, desc: c.note, ics: true, mine: true });
     });
     Hub.training().forEach(function (t) {
       if (Hub.trainingStatus(t) === "complete") return;
       var due = Hub.trainingDue(t);
       if (due && due >= today) items.push({ id: "tr-" + t.id, kind: "Training due", title: t.title + " training", date: due, time: "", href: "learning.html" });
     });
-    st.goals.forEach(function (g) { if (g.progress < 100 && g.target && g.target >= today) items.push({ id: "g-" + g.id, kind: "Goal due", title: g.title, date: g.target, time: "", href: "journey.html" }); });
+    st.goals.forEach(function (g) { if (Hub.goalStatus(g) !== "done" && g.target && g.target >= today) items.push({ id: "g-" + g.id, kind: "Goal due", title: g.title, date: g.target, time: "", href: "journey.html" }); });
     st.milestones.forEach(function (m) { if (m.status !== "achieved" && m.date && m.date >= today) items.push({ id: "m-" + m.id, kind: "Milestone", title: m.title, date: m.date, time: "", href: "development.html" }); });
     Hub.plannedLearning().forEach(function (p, i) { if (p.status !== "completed" && p.planned && p.planned >= today) items.push({ id: "l-" + i, kind: "Learning", title: p.title, date: p.planned, time: "", href: "learning.html" }); });
     items.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || "") < (b.time || "") ? -1 : (a.time || "") > (b.time || "") ? 1 : a.title < b.title ? -1 : 1; });

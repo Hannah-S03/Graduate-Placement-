@@ -97,7 +97,7 @@
       sec.appendChild(list);
       sec.appendChild(el("details", {}, [
         el("summary", { text: "How is this worked out?" }),
-        el("p", { text: "Overall progress is the average of three parts: your goals (the average progress across all your goals), your milestones (the share you have achieved) and your required training (the share you have completed). A part with nothing in it yet is left out. Your week number is shown separately." })
+        el("p", { text: "Overall progress is the average of three parts: your goals (the share of tasks completed, averaged across all your goals), your milestones (the share you have achieved) and your required training (the share you have completed). A part with nothing in it yet is left out. Your week number is shown separately." })
       ]));
       return sec;
     }
@@ -151,9 +151,10 @@
       return sec;
     }
 
+    function taskLine(g) { var c = Hub.taskCounts(g); return c.total ? c.completed + " of " + Hub.plural(c.total, "task", "tasks") + " completed" : "No tasks yet"; }
     function goalsPanel() {
       var sec = Hub.panel("Next goals");
-      var open = S.state.goals.filter(function (g) { return g.progress < 100; });
+      var open = S.state.goals.filter(function (g) { return Hub.goalStatus(g) !== "done"; });
       open.sort(function (a, b) { return (a.target || "9999") < (b.target || "9999") ? -1 : 1; });
       if (!open.length) {
         sec.appendChild(el("p", {}, [S.state.goals.length ? "All your goals are done. " : "You have not added any goals yet. ", el("a", { href: "journey.html", text: "Go to My journey" }), "."]));
@@ -161,7 +162,7 @@
       }
       var ul = el("ul", { class: "plain" });
       open.slice(0, 3).forEach(function (g) {
-        ul.appendChild(el("li", {}, [el("strong", { text: g.title }), el("span", { class: "muted", text: g.target ? " · due " + Hub.fmtDate(g.target) : "" }), Hub.progress(g.progress, g.title + " progress")]));
+        ul.appendChild(el("li", {}, [el("strong", { text: g.title }), el("span", { class: "muted", text: g.target ? " · due " + Hub.fmtDate(g.target) : "" }), el("div", { class: "muted", text: taskLine(g) })]));
       });
       sec.appendChild(ul);
       return sec;

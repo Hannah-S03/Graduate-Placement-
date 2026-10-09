@@ -23,8 +23,11 @@
     L.push("## Goals", "");
     if (!st.goals.length) L.push("None recorded.");
     st.goals.forEach(function (g) {
-      L.push("- **" + g.title + "** (" + g.type + ", " + g.progress + "% complete" + (g.target ? ", target " + Hub.fmtDate(g.target) : "") + ")" + (g.description ? ": " + g.description : ""));
-      g.history.forEach(function (h) { L.push("  - " + Hub.fmtDate(h.date) + ": " + h.progress + "%" + (h.note ? " – " + h.note : "")); });
+      L.push("- **" + g.title + "** (" + g.type + ", " + Hub.goalProgress(g) + "% complete" + (g.target ? ", target " + Hub.fmtDate(g.target) : "") + ")" + (g.description ? ": " + g.description : ""));
+      (g.tasks || []).forEach(function (t) {
+        L.push("  - [" + (t.status === "completed" ? "x" : " ") + "] " + t.text + " (" + Hub.taskStatusLabel[t.status] + ")");
+        t.comments.forEach(function (c) { L.push("    - " + (c.date ? Hub.fmtDate(c.date) + ": " : "") + c.text); });
+      });
     });
     L.push("", "## Milestones", "");
     if (!st.milestones.length) L.push("None recorded.");
@@ -112,7 +115,7 @@
       var bits = [];
       if (p.name) bits.push(p.name + (p.role ? ", " + p.role : ""));
       if (p.startDate) bits.push("Placement " + Hub.fmtDate(p.startDate) + (pl.endDate ? " to " + Hub.fmtDate(pl.endDate) : ""));
-      bits.push(Hub.plural(st.goals.filter(function (g) { return g.progress >= 100; }).length, "goal", "goals") + " done, " + Hub.plural(st.milestones.filter(function (m) { return m.status === "achieved"; }).length, "milestone", "milestones") + " achieved, " + Hub.plural(Object.keys(st.reflections).length, "weekly reflection", "weekly reflections") + ", " + Hub.plural(st.achievements.length, "achievement", "achievements"));
+      bits.push(Hub.plural(st.goals.filter(function (g) { return Hub.goalStatus(g) === "done"; }).length, "goal", "goals") + " done, " + Hub.plural(st.milestones.filter(function (m) { return m.status === "achieved"; }).length, "milestone", "milestones") + " achieved, " + Hub.plural(Object.keys(st.reflections).length, "weekly reflection", "weekly reflections") + ", " + Hub.plural(st.achievements.length, "achievement", "achievements"));
       panel.appendChild(el("p", { class: "print-only", text: "Graduate scheme record: " + bits.join(" · ") }));
       panel.appendChild(el("p", { text: "Your goals, milestones, skills, learning, reflections and achievements make up a record of your whole scheme. Print it, save it as a PDF, or download it as a text file to share or keep. Your contacts are not included." }));
       var print = el("button", { type: "button", class: "btn", text: "Print / save as PDF" });

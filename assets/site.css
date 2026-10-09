@@ -313,3 +313,28 @@ main { overflow-wrap: anywhere; }
 main section.foldable { border-top: 1px solid var(--border); padding: 4px 0 2px; margin-top: 8px; }
 main section.foldable > h2 { margin: 6px 0 6px; font-size: 1.08rem; }
 main section.foldable .panel-toggle { padding: 2px 0; }
+
+/* goals: tasks with status and comments */
+.tasks { margin: 6px 0 4px; }
+.task-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.task { padding: 8px 0; border-top: 1px solid #edf0f5; }
+.task:first-child { border-top: 1px solid var(--border); }
+.task-main { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.task-text { flex: 1 1 180px; min-width: 0; }
+.task-completed .task-text { text-decoration: line-through; color: var(--muted); }
+select.task-status { width: auto; min-width: 9.5em; flex: none; }
+.task-inprogress select.task-status { border-color: #b58105; }
+.task-completed select.task-status { border-color: #1f7a4d; }
+.task-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 5px; }
+.task-comments { margin: 6px 0 2px; padding: 8px 10px; background: var(--bg); border-radius: var(--radius); }
+.task-comments[hidden] { display: none; }
+.comments { list-style: none; padding: 0; margin: 6px 0; }
+.comments li { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid #edf0f5; }
+.comment-date { color: var(--muted); font-size: .87rem; min-width: 5.5em; }
+.comment-text { flex: 1 1 160px; min-width: 0; white-space: pre-wrap; }
+.task-comments .hub-form { margin-top: 6px; }
+.tasks > .hub-form.inline { margin-top: 4px; }
+.task-count { margin: 2px 0 4px; }
+@media (max-width: 700px) { select.task-status { min-height: 40px; } }
+
+.goal-actions { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
