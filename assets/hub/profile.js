@@ -21,7 +21,7 @@
         fields: [
           { name: "name", label: "Your name", required: true, autocomplete: "name", maxlength: 120 },
           { name: "role", label: "Your role or area", hint: "For example: Graduate, central team.", maxlength: 200 },
-          { name: "startDate", label: "Placement start date", type: "date", required: true, hint: "Used to work out your week number and training due dates." },
+          { name: "startDate", label: "Placement start date", type: "date", required: true, hint: "Used to work out your week number (weeks start on a Monday) and training due dates." },
           { name: "endDate", label: "Placement end date", type: "date", hint: "Leave empty to use 12 weeks from your start date." },
           { name: "email", label: "Your email", type: "email", autocomplete: "email", hint: "Only used to fill in the address when you press \u201CEmail me this\u201D on your week-ahead overview. It stays in this browser.", maxlength: 200 },
           { name: "manager", label: "Your manager", maxlength: 120 },
@@ -330,6 +330,11 @@
         Hub.focus(card.heading);
       } else dashboard();
     }
+    // Left open over a weekend: when the person comes back to the tab on a new day, redraw so the week number and "today" are current.
+    var drawnOn = S.today();
+    function newDay() { if (S.today() !== drawnOn && !editing && S.state.profile.name) { drawnOn = S.today(); render(); } }
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) newDay(); });
+    window.addEventListener("focus", newDay);
     render();
   };
 })();

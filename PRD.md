@@ -147,7 +147,7 @@ Help has graduate FAQs and the programme contact. The privacy notice (draft) exp
 
 ## 6. How progress is worked out
 
-**Programme progress bar (top of My profile):** the share of the programme's weeks reached, that is the **current week divided by the total weeks**. Week 6 of 12 is 50%. The week number counts from the start date (days 1 to 7 are week 1) and the total is the number of weeks between the start and end dates, with a part week counting as a week. The programme dates (1 Sept to 20 Nov 2026) give 12 weeks. If a graduate enters a start date but no end date, 12 weeks is assumed. The bar moves in weekly steps; it is 0% before the start and 100% from the last week onwards.
+**Programme progress bar (top of My profile):** the share of the programme's weeks reached, that is the **current week divided by the total weeks**. Week 6 of 12 is 50%. Weeks run **Monday to Sunday and the week number goes up every Monday**: week 1 is the week that contains the start date (even if the start is mid-week), and the total is the number of Monday weeks up to the end date, with a part week counting as a week. A tab left open over the weekend updates when the graduate returns to it. The programme dates (1 Sept to 20 Nov 2026) give 12 weeks. If a graduate enters a start date but no end date, 12 weeks is assumed. The bar moves in weekly steps; it is 0% before the start and 100% from the last week onwards.
 
 **Overall progress (the tracker below it):**
 

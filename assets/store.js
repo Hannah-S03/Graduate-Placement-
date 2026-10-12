@@ -43,20 +43,24 @@
     return Math.round((Date.UTC(y.getFullYear(), y.getMonth(), y.getDate()) - Date.UTC(x.getFullYear(), x.getMonth(), x.getDate())) / 86400000);
   }
 
-  // Where the graduate is in the programme. With an end date the length is worked out from the dates
-  // (a partial last week counts as a week); without one it is placementWeeks (12) weeks from the start.
+  // Where the graduate is in the programme. Weeks run Monday to Sunday and the week number goes up every Monday:
+  // week 1 is the week that contains the start date (even if the start is mid-week). With an end date the length is
+  // the number of Monday weeks up to it (a partial last week counts as a week); without one it is placementWeeks (12) weeks.
   // Progress (pct) is the current week out of the total weeks, for example week 6 of 12 = 50%.
+  function mondayOf(s) { return addDays(s, -((parseDate(s).getDay() + 6) % 7)); }
+  // The programme week (1, 2, 3 ...) a date falls in; 0 or less before the first week.
+  function weekOf(startDate, date) { return Math.floor(daysBetween(mondayOf(startDate), date) / 7) + 1; }
   function placement(startDate, endDate) {
     var cfgWeeks = (window.SITE_CONFIG && window.SITE_CONFIG.placementWeeks) || 12;
     if (!startDate) return { status: "none", totalWeeks: cfgWeeks };
-    var totalDays = cfgWeeks * 7;
-    if (endDate && daysBetween(startDate, endDate) >= 0) totalDays = daysBetween(startDate, endDate) + 1;
-    var totalWeeks = Math.ceil(totalDays / 7);
+    var m0 = mondayOf(startDate), offset = daysBetween(m0, startDate), totalDays, totalWeeks;
+    if (endDate && daysBetween(startDate, endDate) >= 0) { totalDays = daysBetween(startDate, endDate) + 1; totalWeeks = Math.ceil((offset + totalDays) / 7); }
+    else { totalWeeks = cfgWeeks; totalDays = cfgWeeks * 7 - offset; }
     var daysIn = daysBetween(startDate, today());
     var last = addDays(startDate, totalDays - 1);
     if (daysIn < 0) return { status: "before", startsIn: -daysIn, totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, pct: 0 };
     if (daysIn >= totalDays) return { status: "after", totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, week: totalWeeks, pct: 100 };
-    var week = Math.floor(daysIn / 7) + 1;
+    var week = Math.min(totalWeeks, weekOf(startDate, today()));
     return { status: "during", week: week, totalWeeks: totalWeeks, totalDays: totalDays, endDate: last, daysIn: daysIn, pct: Math.round((week / totalWeeks) * 100) };
   }
   // The dates in use: the graduate's own if they have entered a start date, otherwise the programme dates from config.
@@ -237,6 +241,6 @@
     get state() { return state; },
     save: save, exportJSON: exportJSON, importJSON: importJSON, reset: reset,
     id: uid, today: today, addDays: addDays, daysBetween: daysBetween, parseDate: parseDate,
-    placement: placement, programme: programme, safeUrl: safeUrl, dateStr: dateStr, sanitize: sanitize, emptyState: emptyState
+    placement: placement, programme: programme, weekOf: weekOf, mondayOf: mondayOf, safeUrl: safeUrl, dateStr: dateStr, sanitize: sanitize, emptyState: emptyState
   };
 })();

@@ -502,9 +502,9 @@
     var start = S.addDays(ref, dow === 0 ? 1 : dow === 6 ? 2 : 1 - dow), end = S.addDays(start, 6);
     var today = S.today(), pl = S.programme(), pw = null;
     if (pl.startDate) {
-      var di = S.daysBetween(pl.startDate, start);
-      if (di >= 0 && di < pl.totalDays) pw = { week: Math.floor(di / 7) + 1, total: pl.totalWeeks };
-      else if (di < 0 && S.daysBetween(pl.startDate, end) >= 0) pw = { week: 1, total: pl.totalWeeks };
+      var wk = S.weekOf(pl.startDate, start);
+      if (wk >= 1 && wk <= pl.totalWeeks) pw = { week: wk, total: pl.totalWeeks };
+      else if (wk < 1 && S.weekOf(pl.startDate, end) >= 1) pw = { week: 1, total: pl.totalWeeks };
     }
     var all = Hub.agenda(0, { all: true }), deadlines = [], overdue = [], days = [];
     for (var i = 0; i < 7; i++) days.push({ date: S.addDays(start, i), label: Hub.shortDate(S.addDays(start, i)), items: [] });
