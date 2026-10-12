@@ -23,6 +23,7 @@
           { name: "role", label: "Your role or area", hint: "For example: Graduate, central team.", maxlength: 200 },
           { name: "startDate", label: "Placement start date", type: "date", required: true, hint: "Used to work out your week number and training due dates." },
           { name: "endDate", label: "Placement end date", type: "date", hint: "Leave empty to use 12 weeks from your start date." },
+          { name: "email", label: "Your email", type: "email", autocomplete: "email", hint: "Only used to fill in the address when you press \u201CEmail me this\u201D on your week-ahead overview. It stays in this browser.", maxlength: 200 },
           { name: "manager", label: "Your manager", maxlength: 120 },
           { name: "mentor", label: "Your mentor", maxlength: 120 },
           { name: "interests", label: "Career interests", type: "textarea", hint: "What would you like to learn or become? Only you can see this." }
@@ -313,9 +314,11 @@
       var data = dataPanel();
       Hub.collapsible(data, { start: "closed" });
       body.appendChild(data);
+      if (Hub.mountAgent) Hub.mountAgent();
     }
 
     function render() {
+      if (Hub.unmountAgent) Hub.unmountAgent();
       top.textContent = ""; hello.hidden = true;
       top.appendChild(programmePanel());
       body.textContent = "";

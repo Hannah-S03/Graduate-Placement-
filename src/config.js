@@ -13,5 +13,6 @@ window.SITE_CONFIG = {
   programmeStart: "2026-09-01",
   programmeEnd: "2026-11-20",
   placementWeeks: 12, // used only if no end date is known
+  hubUrl: "", // optional: the web address graduates open the hub at. If filled in, it is added to the Monday reminder in their calendar
   contactEmail: "graduates@example.com" // DUMMY
 };

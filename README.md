@@ -8,7 +8,7 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 
 | Page | What it does |
 |---|---|
-| **My profile** (home) | The programme progress bar, **weekly goals**, a small **progress update** (with a copy-to-share button), a **calendar of upcoming events and reminders** (with calendar files), overall progress, reminders, pinned links, and backup and restore |
+| **My profile** (home) | The programme progress bar, **weekly goals**, a small **progress update** (with a copy-to-share button), a **calendar of upcoming events and reminders** (with calendar files), overall progress, reminders, pinned links, and backup and restore. A round **AI agent** button (see below) opens the week-ahead overview |
 | **My journey** | Add development, career and placement goals; each goal holds tasks marked not started, in progress or completed, with comments |
 | **My development** | Record milestones and rate skills at the start and now, with a **skills chart** (radar or bars, with a table version) |
 | **Quick links** | Pin company systems and resources, and add your own |
@@ -24,6 +24,15 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 - **Dark mode:** the moon / sun button in the header switches between the light and dark theme. The choice is saved in this browser (`gradHub.theme`); without a choice the device's setting is followed. Printing is always light.
 - **Page banners and menu icons:** each page opens with a navy banner showing its title and summary, and the menu has a small icon beside each page.
 - **Celebrations:** a short message (and a brief gold highlight, which is switched off for people who prefer reduced motion) appears once when a goal is finished or a milestone is achieved, and a dismissible note appears on My profile when the programme is half way and when it is complete.
+
+## The AI agent button (week ahead)
+
+On **My profile** a round navy button labelled **AI agent** sits at the bottom right. Click it for your week ahead (Monday to Sunday, or next week at the weekend): up to six priorities, meetings and events by day, deadlines and anything overdue. On a Monday a gold dot and a short note tell you it is ready until you have opened it that week.
+
+- **Move it:** drag it anywhere on the screen (mouse or finger), or press **Alt** or **Shift** with an arrow key while it is selected, or use the **Move** buttons in the overview. **Reset position** puts it back. The position is remembered in this browser (`gradHub.agentPos`).
+- **Email me this** opens a draft in your own email app (add your address under **Edit profile > Your email** to fill it in). **Copy text** copies the overview. **Add a Monday reminder to my calendar** downloads a repeating weekly calendar file (Mondays 08:30); set `hubUrl` in `src/config.js` to add the hub's address to it.
+- **It is not a real AI.** It follows fixed rules over your own saved goals, tasks, calendar, 1:1 meetings, training and milestones, and says so in the overview. Nothing is sent anywhere.
+- **What it cannot do:** send an email by itself on Monday morning, or write the text with a real AI. That needs a server or Microsoft 365 (Power Automate), access to each graduate's data, Vesta IT's agreement, an updated privacy notice and consent.
 
 ## Where is the information saved?
 
@@ -56,8 +65,8 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 | `assets/site.js` | Header (menu, icons, search and dark-mode buttons), page banners, footer and the company, objectives, skills and FAQ sections |
 | `assets/theme.js` | Sets the light or dark theme before the page is drawn |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
-| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages), `search.js` (the header search), `meetings.js` (meetings and feedback) and one script per section |
-| `src/config.js` | Names, programme start and end dates, contact email, dummy-data banner switch |
+| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages and the week-ahead rules), `agent.js` (the AI agent button), `search.js` (the header search), `meetings.js` (meetings and feedback) and one script per section |
+| `src/config.js` | Names, programme start and end dates, contact email, optional `hubUrl`, dummy-data banner switch |
 | `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 
 ## Replacing the dummy content

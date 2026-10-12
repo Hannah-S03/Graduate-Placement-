@@ -488,13 +488,119 @@
     return limit ? items.slice(0, limit) : items;
   };
 
+  // ----- the week ahead (used by the AI agent button on My profile) -----
+  var DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  // "Mon 12 Oct" (always in this form, whatever the browser language, so the text and the email subject are predictable)
+  Hub.shortDate = function (date) { var d = S.parseDate(date); return DAY_NAMES[d.getDay()] + " " + d.getDate() + " " + MONTH_NAMES[d.getMonth()]; };
+  var DUE_KINDS = { "Training due": 1, "Goal due": 1, "Milestone": 1 };
+
+  // The Monday-to-Sunday week that contains dateStr (default today); on a Saturday or Sunday it is the coming week.
+  // Rules only, nothing is sent anywhere: it reads the hub's own saved data.
+  // Returns { start, end, rangeLabel, isNextWeek, programmeWeek (null or {week,total}), priorities, days, deadlines, overdue, counts }.
+  Hub.weekAhead = function (dateStr) {
+    var st = S.state, ref = dateStr || S.today(), dow = S.parseDate(ref).getDay();
+    var start = S.addDays(ref, dow === 0 ? 1 : dow === 6 ? 2 : 1 - dow), end = S.addDays(start, 6);
+    var today = S.today(), pl = S.programme(), pw = null;
+    if (pl.startDate) {
+      var di = S.daysBetween(pl.startDate, start);
+      if (di >= 0 && di < pl.totalDays) pw = { week: Math.floor(di / 7) + 1, total: pl.totalWeeks };
+      else if (di < 0 && S.daysBetween(pl.startDate, end) >= 0) pw = { week: 1, total: pl.totalWeeks };
+    }
+    var all = Hub.agenda(0, { all: true }), deadlines = [], overdue = [], days = [];
+    for (var i = 0; i < 7; i++) days.push({ date: S.addDays(start, i), label: Hub.shortDate(S.addDays(start, i)), items: [] });
+    all.forEach(function (a) {
+      if (DUE_KINDS[a.kind]) {
+        if (a.date < today) overdue.push(a);
+        else if (a.date >= start && a.date <= end) deadlines.push(a);
+      } else if (a.date >= start && a.date <= end) {
+        days[S.daysBetween(start, a.date)].items.push(a);
+      }
+    });
+    overdue.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+
+    // priorities: overdue, then due this week, then tasks in progress, weekly goals, meeting actions, the reflection
+    var pri = [];
+    function add(title, reason, href) { pri.push({ title: title, reason: reason, href: href }); }
+    overdue.forEach(function (a) { add(a.title, "Overdue: was due " + Hub.shortDate(a.date), a.href); });
+    deadlines.forEach(function (a) { add(a.title, a.kind + " " + Hub.shortDate(a.date), a.href); });
+    var inProgress = 0;
+    st.goals.forEach(function (g) {
+      if (Hub.goalStatus(g) === "done") return;
+      (g.tasks || []).forEach(function (t) { if (t.status === "inprogress") { inProgress++; add(t.text, "Task in progress · goal: " + g.title, "journey.html"); } });
+    });
+    if (pw) (st.weeklyGoals[String(pw.week)] || []).forEach(function (g) { if (!g.done) add(g.text, "Weekly goal for week " + pw.week, "index.html"); });
+    st.meetings.forEach(function (m) {
+      (m.actions || []).forEach(function (a) { if (!a.done) add(a.text, "Action from your 1:1" + (m.withWho ? " with " + m.withWho : ""), "meetings.html"); });
+    });
+    if (pw && ref >= start && pl.status === "during" && !st.reflections[String(pw.week)]) add("Write your reflection for week " + pw.week, "Takes a few minutes", "reflection.html");
+
+    var meetings = 0; days.forEach(function (d) { meetings += d.items.filter(function (x) { return x.kind !== "Learning"; }).length; });
+    return {
+      start: start, end: end, isNextWeek: ref < start, programmeWeek: pw,
+      rangeLabel: S.parseDate(start).getMonth() === S.parseDate(end).getMonth() ? DAY_NAMES[S.parseDate(start).getDay()] + " " + S.parseDate(start).getDate() + " to " + Hub.shortDate(end) : Hub.shortDate(start) + " to " + Hub.shortDate(end),
+      priorities: pri.slice(0, 6), morePriorities: Math.max(0, pri.length - 6), days: days, deadlines: deadlines, overdue: overdue,
+      counts: { inprogress: inProgress, meetings: meetings, deadlines: deadlines.length, overdue: overdue.length },
+      empty: !pri.length && !meetings && !deadlines.length && !overdue.length && !days.some(function (d) { return d.items.length; })
+    };
+  };
+
+  // "3 tasks in progress · 2 meetings and events · 4 deadlines" (parts with nothing in them are left out)
+  Hub.weekAheadCounts = function (w) {
+    var c = w.counts, out = [];
+    if (c.inprogress) out.push(Hub.plural(c.inprogress, "task in progress", "tasks in progress"));
+    if (c.meetings) out.push(Hub.plural(c.meetings, "meeting or event", "meetings and events"));
+    if (c.deadlines) out.push(Hub.plural(c.deadlines, "deadline", "deadlines"));
+    if (c.overdue) out.push(c.overdue + " overdue");
+    return out.join(" · ");
+  };
+
+  // Plain text version of the overview, for copying or an email.
+  Hub.weekAheadText = function (w) {
+    var L = [];
+    L.push("Week ahead: " + w.rangeLabel + (w.programmeWeek ? " (week " + w.programmeWeek.week + " of " + w.programmeWeek.total + ")" : ""));
+    var counts = Hub.weekAheadCounts(w); if (counts) L.push(counts);
+    if (w.empty) { L.push("", "A quiet week. Nothing is planned yet."); }
+    if (w.priorities.length) {
+      L.push("", "PRIORITIES");
+      w.priorities.forEach(function (p, i) { L.push((i + 1) + ". " + p.title + " (" + p.reason + ")"); });
+      if (w.morePriorities) L.push("...and " + w.morePriorities + " more in the Graduate Hub");
+    }
+    var busy = w.days.filter(function (d) { return d.items.length; });
+    if (busy.length) {
+      L.push("", "MEETINGS AND EVENTS");
+      busy.forEach(function (d) {
+        L.push(d.label);
+        d.items.forEach(function (a) { L.push("- " + (a.time ? a.time + " " : "") + a.title + (a.where ? " (" + a.where + ")" : "") + (a.kind === "Learning" ? " [planned learning]" : "")); });
+      });
+    }
+    if (w.deadlines.length) { L.push("", "DEADLINES"); w.deadlines.forEach(function (a) { L.push("- " + Hub.shortDate(a.date) + ": " + a.title); }); }
+    if (w.overdue.length) { L.push("", "OVERDUE"); w.overdue.forEach(function (a) { L.push("- " + a.title + " (was due " + Hub.shortDate(a.date) + ")"); }); }
+    return L.join("\n");
+  };
+
+  // A mailto: link that opens the person's own email app with the overview filled in. Long text is trimmed (long addresses break some mail apps).
+  Hub.weekAheadMailto = function (w, to) {
+    var subject = "Week ahead: " + Hub.shortDate(w.start), note = "\n\nSee the full overview in the Graduate Hub.";
+    var lines = Hub.weekAheadText(w).split("\n"), body = lines.join("\r\n");
+    while (encodeURIComponent(body + note).length > 1400 && lines.length > 1) { lines.pop(); body = lines.join("\r\n"); }
+    var trimmed = lines.length < Hub.weekAheadText(w).split("\n").length;
+    return "mailto:" + (to ? encodeURIComponent(to).replace(/%40/g, "@") : "") + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body + (trimmed ? "\r\n..." : "") + note.replace(/\n/g, "\r\n"));
+  };
+
+  // A repeating Monday 08:30 reminder for the calendar (.ics), starting on the next Monday (today if it is Monday).
+  Hub.mondayReminderIcs = function () {
+    var today = S.today(), dow = S.parseDate(today).getDay(), first = S.addDays(today, (8 - dow) % 7), url = S.safeUrl((window.SITE_CONFIG || {}).hubUrl || "");
+    return Hub.buildIcs([{ uid: "week-ahead", date: first, time: "08:30", minutes: 15, title: "Graduate Hub: Your week ahead", description: "Open the Graduate Hub: Your week ahead" + (url ? "\n" + url : ""), alert: "PT0S", rrule: "FREQ=WEEKLY;BYDAY=MO", url: url }]);
+  };
+
   // ----- calendar files (.ics) -----
   function icsEscape(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
   function fold(line) { var out = [], l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = " " + l.slice(74); } out.push(l); return out.join("\r\n"); }
   function stamp() { return new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   // events: [{ uid, date: "YYYY-MM-DD", time?: "HH:MM", minutes?, title, description?, location?, alert? }].
-  // Without a time the event is all day. alert is an ICS duration such as "-P3D"; default 1 day before (all day) or 1 hour before.
+  // Without a time the event is all day. alert is an ICS duration such as "-P3D" ("PT0S" = at the start); default 1 day before (all day) or 1 hour before.
+  // rrule (for example "FREQ=WEEKLY;BYDAY=MO") makes the event repeat; url is a web address shown with the event.
   Hub.buildIcs = function (events) {
     var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Graduate Hub//EN", "CALSCALE:GREGORIAN"];
     events.forEach(function (e) {
@@ -507,7 +613,9 @@
       } else {
         lines.push("DTSTART;VALUE=DATE:" + e.date.replace(/-/g, ""), "DTEND;VALUE=DATE:" + S.addDays(e.date, 1).replace(/-/g, ""));
       }
+      if (e.rrule) lines.push("RRULE:" + e.rrule);
       lines.push("SUMMARY:" + icsEscape(e.title));
+      if (e.url) lines.push("URL:" + e.url);
       if (e.location) lines.push("LOCATION:" + icsEscape(e.location));
       lines.push("DESCRIPTION:" + icsEscape(e.description || ""),
         "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsEscape(e.title), "TRIGGER:" + (e.alert || (timed ? "-PT1H" : "-P1D")), "END:VALARM", "END:VEVENT");

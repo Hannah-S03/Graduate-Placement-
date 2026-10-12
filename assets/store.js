@@ -26,6 +26,8 @@
     var p = x.split("-").map(Number), d = new Date(p[0], p[1] - 1, p[2]);
     return d.getFullYear() === p[0] && d.getMonth() === p[1] - 1 && d.getDate() === p[2] ? x : "";
   }
+  // An optional email address, only used to fill in the "email me this" draft. Anything that does not look like an address is dropped.
+  function emailOf(x) { x = str(x, 200).trim(); return /^[^\s@<>",;]+@[^\s@<>",;]+\.[^\s@<>",;]+$/.test(x) ? x : ""; }
   function idOf(i) { return str(i.id, 60) || uid(); }
   function uid() { return "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
@@ -84,7 +86,7 @@
   function emptyState() {
     return {
       version: 1,
-      profile: { name: "", role: "", manager: "", mentor: "", startDate: "", endDate: "", interests: "" },
+      profile: { name: "", role: "", email: "", manager: "", mentor: "", startDate: "", endDate: "", interests: "" },
       goals: [], milestones: [], skills: {},
       links: { pinned: [], custom: [] },
       learning: { saved: {}, custom: [], training: {} },
@@ -98,7 +100,7 @@
     var s = emptyState();
     if (!isObj(raw)) return s;
     var p = isObj(raw.profile) ? raw.profile : {};
-    s.profile = { name: str(p.name, 120), role: str(p.role, 200), manager: str(p.manager, 120), mentor: str(p.mentor, 120), startDate: dateStr(p.startDate), endDate: dateStr(p.endDate), interests: str(p.interests) };
+    s.profile = { name: str(p.name, 120), role: str(p.role, 200), email: emailOf(p.email), manager: str(p.manager, 120), mentor: str(p.mentor, 120), startDate: dateStr(p.startDate), endDate: dateStr(p.endDate), interests: str(p.interests) };
     s.goals = mapList(raw.goals, function (g) {
       return {
         id: idOf(g), type: oneOf(g.type, ["development", "career", "placement"], "development"),

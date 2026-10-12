@@ -41,7 +41,7 @@ Graduates juggle goals, training deadlines, learning ideas, contacts and reflect
 **Non-goals (this version)**
 - Sign-in, accounts, or data shared across devices
 - Manager, mentor or programme-team views of progress
-- Push or email notifications (reminders appear in the hub, with downloadable calendar files)
+- Push or email notifications sent automatically (reminders and the week-ahead overview appear in the hub; the graduate can open an email draft or add a repeating Monday reminder to their own calendar)
 - Uploading files (achievements link to evidence instead)
 - Recruitment or application features
 
@@ -84,6 +84,7 @@ Priority: **P0** required, **P1** should have, **P2** nice to have.
 | H17 | **Meetings and feedback page** (menu item "Meetings"): **1:1 meetings** with date, who, topic, agenda, notes, next 1:1 date and a list of actions (tick done, delete, and **turn into a task** on one of your goals); the next 1:1 date appears in the calendar and in Reminders the day before; meeting notes are private to this browser and are **not** part of the scheme record. A **feedback log** (date, from, Positive or To develop, the feedback, what you will do, optional linked goal, filter by type, **save to achievements**); feedback is included in the scheme record | P1 |
 | H18 | **Calendar month view:** a List / Month switch on the home calendar; the month grid (weeks start on Monday) shows events, deadlines and 1:1s with up to two titles per day (a count on phones), today ringed, the selected day listed underneath with the usual buttons, "Add an event on this day", and full keyboard use (arrows, Home / End, PageUp / PageDown) | P1 |
 | H19 | **Skills chart** on My development: a radar chart (or paired bars, the default on phones) of ratings at the start versus now, with a legend, a summary line, hover and keyboard tooltips, dashed and hatched marks so colour is never the only signal, colours validated for colour-blind readers in both themes, and a "Show as a table" version | P1 |
+| H20 | **"AI agent" week-ahead button** on My profile: a round, draggable button (mouse, touch, Alt or Shift + arrow keys, or Move buttons; position remembered in the browser; "Reset position") that opens an overview of the week (Monday to Sunday, next week at the weekend): up to six priorities with reasons and links, meetings and events by day, deadlines and overdue items. It is **rule based and runs in the browser**, and says so; nothing is sent to an AI service. On a Monday a gold dot and note show until it has been opened that week. Buttons: **Email me this** (a draft in the graduate's own mail app, address from an optional profile email), **Copy text**, and **Add a Monday reminder** (a repeating weekly calendar file) | P1 |
 
 **Order on the page:** programme progress bar, profile card, Weekly goals, Progress update, Reminders, Calendar and upcoming events, progress tracker, pinned links, next goals, latest achievements, My data.
 
@@ -218,7 +219,9 @@ Static site: plain HTML, CSS and JavaScript, no build step or server.
 | Content goes stale (links, training, contacts) | Name a content owner; content is plain data files |
 
 ## 13. Out of scope for this version
-Sign-in, shared or manager views, notifications, syncing across devices, file uploads.
+Sign-in, shared or manager views, automatic notifications and emails, a real AI service writing the overview, syncing across devices, file uploads.
+
+**Future option: automatic Monday email and a real AI summary.** Both need something outside the browser (a small server, or Microsoft 365 / Power Automate), because nothing outside the browser can read a graduate's data or send email for them. A real AI writing the text also needs an API key and sending each week's data to the AI service. Before doing either: agree it with Vesta IT, update the privacy notice, and ask graduates for consent.
 
 ## 14. Dummy content to replace
 Company details, the central team and areas, people and key contacts, graduate quotes, the skills overview wording, placement details and key moments, **programme events (dates, times, places)**, company links, required training and due-day rules, learning catalogue, networks and groups, FAQs, contact email.
