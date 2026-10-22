@@ -593,6 +593,37 @@
     return Hub.buildIcs([{ uid: "week-ahead", date: first, time: "08:30", minutes: 15, title: "Graduate Hub: Your week ahead", description: "Open the Graduate Hub: Your week ahead" + (url ? "\n" + url : ""), alert: "PT0S", rrule: "FREQ=WEEKLY;BYDAY=MO", url: url }]);
   };
 
+  // ----- progress summary: the file a graduate can choose to send to the programme team -----
+  // Only what the graduate ticks is included. Never included: 1:1 notes, feedback, reflections, contacts, career interests,
+  // email address, achievements text. The programme team view (admin.html) reads this same shape.
+  Hub.SUMMARY_KIND = "graduate-hub-summary";
+  // The email draft address for the summary: the programme team address if set in config, otherwise the contact email.
+  Hub.summaryMailto = function (fileName) {
+    var cfg = window.SITE_CONFIG || {}, name = S.state.profile.name || "", to = cfg.programmeTeamEmail || cfg.contactEmail || "";
+    var body = "Hello,\r\n\r\nMy progress summary file is attached: " + fileName + "\r\n\r\n" + name;
+    return "mailto:" + to + "?subject=" + encodeURIComponent("Graduate Hub progress summary: " + name) + "&body=" + encodeURIComponent(body);
+  };
+  var MOOD_NAMES = ["", "Struggling", "Tough", "Okay", "Good", "Great"];
+  Hub.moodLabel = function (n) { return n > 0 && MOOD_NAMES[n] ? MOOD_NAMES[n] : ""; };
+  Hub.buildSummary = function (opts) {
+    opts = opts || {};
+    var st = S.state, p = st.profile, pl = S.programme(), sum = Hub.progressSummary(), cw = Hub.currentWeek();
+    var tasks = 0, tasksDone = 0, goalsDone = 0;
+    st.goals.forEach(function (g) { var c = Hub.taskCounts(g); tasks += c.total; tasksDone += c.completed; if (Hub.goalStatus(g) === "done") goalsDone++; });
+    function part(key) { var x = sum.parts.filter(function (q) { return q.key === key; })[0]; return x && x.pct !== null ? Math.round(x.pct) : null; }
+    var out = {
+      kind: Hub.SUMMARY_KIND, version: 1, generated: S.today(),
+      graduate: { name: p.name, role: p.role },
+      programme: { start: pl.startDate || "", end: pl.endDate || "", status: pl.status, week: pl.status === "during" ? pl.week : pl.status === "after" ? pl.totalWeeks : 0, totalWeeks: pl.totalWeeks, pct: pl.pct || 0 },
+      progress: { overall: sum.overall, goals: part("goals"), milestones: part("milestones"), training: part("training") },
+      counts: { goals: st.goals.length, goalsDone: goalsDone, tasks: tasks, tasksDone: tasksDone, overdue: Hub.reminders().filter(function (r) { return r.kind === "danger"; }).length },
+      shared: { goals: !!opts.goals, update: !!opts.update }
+    };
+    if (opts.goals) out.goals = st.goals.map(function (g) { var c = Hub.taskCounts(g); return { title: g.title, status: Hub.goalStatus(g), target: g.target, tasksDone: c.completed, tasksTotal: c.total }; });
+    if (opts.update) { var up = st.updates[String(cw.week)]; out.update = up && (up.mood || up.note) ? { week: cw.week, mood: up.mood, note: up.note, updated: up.updated } : null; }
+    return out;
+  };
+
   // ----- calendar files (.ics) -----
   function icsEscape(s) { return String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n"); }
   function fold(line) { var out = [], l = line; while (l.length > 74) { out.push(l.slice(0, 74)); l = " " + l.slice(74); } out.push(l); return out.join("\r\n"); }

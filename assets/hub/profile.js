@@ -311,6 +311,9 @@
       add(goalsPanel(), "closed-on-phone");
       add(achievementsPanel(), "closed-on-phone");
       body.appendChild(grid);
+      var share = Hub.homePanels.share(status);
+      Hub.collapsible(share, { start: "closed" });
+      body.appendChild(share);
       var data = dataPanel();
       Hub.collapsible(data, { start: "closed" });
       body.appendChild(data);

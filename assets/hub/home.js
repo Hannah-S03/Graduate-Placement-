@@ -3,7 +3,7 @@
   "use strict";
   var Hub = window.Hub, el = Hub.el, S = Hub.store;
   var MOODS = [{ value: "0", label: "Choose how it is going" }, { value: "1", label: "Struggling" }, { value: "2", label: "Tough" }, { value: "3", label: "Okay" }, { value: "4", label: "Good" }, { value: "5", label: "Great" }];
-  function moodLabel(n) { var m = MOODS.filter(function (x) { return x.value === String(n); })[0]; return n > 0 && m ? m.label : ""; }
+  var moodLabel = Hub.moodLabel;
   function weekLabel(cw) {
     var pl = cw.pl;
     if (pl.status === "during") return "Week " + cw.week + " of " + pl.totalWeeks;
@@ -179,6 +179,49 @@
   };
 
   // ---------- calendar and upcoming events ----------
+  // ---------- share a progress summary with the programme team (optional, nothing is sent automatically) ----------
+  Hub.homePanels.share = function (status) {
+    var sec = Hub.panel("Share with the programme team");
+    sec.appendChild(el("p", { text: "Sharing is optional. Nothing is sent automatically: you download a small file, look at what is in it, and send it yourself (for example by email) to the programme team." }));
+    var basics = el("div", { class: "share-basics" }, [
+      el("p", { class: "share-label", text: "Always in the file" }),
+      el("p", { class: "muted", text: "Your name and role, your programme dates and week, your progress percentages, and how many goals, tasks and overdue items you have." })
+    ]);
+    sec.appendChild(basics);
+    var goalsId = "share-goals", updId = "share-update";
+    var goalsBox = el("input", { type: "checkbox", id: goalsId }), updBox = el("input", { type: "checkbox", id: updId });
+    sec.appendChild(el("fieldset", { class: "share-opts" }, [
+      el("legend", { text: "Also include (off unless you tick it)" }),
+      el("div", { class: "check" }, [goalsBox, el("label", { for: goalsId, text: "My goal titles and how far along each is" })]),
+      el("div", { class: "check" }, [updBox, el("label", { for: updId, text: "My weekly progress update (how it is going, and my note)" })])
+    ]));
+    sec.appendChild(el("p", { class: "muted", text: "Never included, whatever you tick: 1:1 meeting notes, feedback, reflections, contacts, career interests, your email address and achievement details." }));
+    var pre = el("pre", { class: "update-text", tabindex: "0", "aria-label": "Exact contents of the summary file" });
+    var det = el("details", {}, [el("summary", { text: "Preview exactly what will be in the file" }), pre]);
+    sec.appendChild(det);
+    function opts() { return { goals: goalsBox.checked, update: updBox.checked }; }
+    function fileText() { return JSON.stringify(Hub.buildSummary(opts()), null, 2); }
+    function fileName() { return "graduate-hub-summary-" + (Hub.slug(S.state.profile.name) || "me") + "-" + S.today() + ".json"; }
+    function refresh() { pre.textContent = fileText(); }
+    goalsBox.addEventListener("change", refresh); updBox.addEventListener("change", refresh);
+    det.addEventListener("toggle", refresh);
+    refresh();
+    Hub.onChange("share", refresh);
+    var dl = el("button", { type: "button", class: "btn", text: "Download my progress summary" });
+    dl.addEventListener("click", function () {
+      Hub.download(fileName(), fileText(), "application/json");
+      status.say("Your progress summary was downloaded. It stays on your computer until you send it.", false);
+    });
+    var mail = el("button", { type: "button", class: "btn secondary", text: "Email it to the programme team" });
+    mail.addEventListener("click", function () {
+      Hub.download(fileName(), fileText(), "application/json");
+      window.location.href = Hub.summaryMailto(fileName());
+      status.say("The file was downloaded and an email draft opened. Attach the downloaded file to the email before you send it (your email program cannot attach it for you).", false);
+    });
+    sec.appendChild(el("div", { class: "row" }, [dl, mail]));
+    return sec;
+  };
+
   Hub.homePanels.calendar = function (status) {
     var sec = Hub.panel("Calendar and upcoming events", "calendar");
     sec.id = "calendar";

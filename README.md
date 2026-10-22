@@ -34,6 +34,14 @@ On **My profile** a round navy button labelled **AI agent** sits at the bottom r
 - **It is not a real AI.** It follows fixed rules over your own saved goals, tasks, calendar, 1:1 meetings, training and milestones, and says so in the overview. Nothing is sent anywhere.
 - **What it cannot do:** send an email by itself on Monday morning, or write the text with a real AI. That needs a server or Microsoft 365 (Power Automate), access to each graduate's data, Vesta IT's agreement, an updated privacy notice and consent.
 
+## Sharing progress with the programme team (opt-in, no server)
+
+**Graduates:** on **My profile**, open **Share with the programme team**. Tick what to include (goal titles and the weekly update are off unless ticked), open **Preview exactly what will be in the file**, then **Download my progress summary** (or **Email it to the programme team**, which downloads the file and opens an email draft: attach the downloaded file). Never included: 1:1 meeting notes, feedback, reflections, contacts, career interests, email address and achievement details. Set `programmeTeamEmail` in `src/config.js` to address the draft (it falls back to `contactEmail`).
+
+**Head of the programme:** open `admin.html` (for example `localhost:8000/admin.html`; it is not in the menu). **Load progress summaries** accepts many files at once and checks each one; a newer file for the same graduate replaces the older one and the older numbers stay in the trend. The **Cohort** table sorts by any column, filters by name or role and flags anyone with no update for two weeks or more. Click a name for the detail, a trend (with a table version) and your own dated **notes**. **Export** gives a CSV of the table, **Download a backup** saves summaries and notes, and **Clear everything** removes them from the browser.
+
+Limits: it is manual (as fresh as the last file sent), the page has no login (it holds nothing until files are loaded, and everything stays in that browser, so use a Vesta-managed device), and the head's notes never reach graduates. Use dummy data until the privacy notice has been agreed. A live version (automatic reporting, sign-in, roles, an audit log) needs a server and Vesta IT, HR and data-protection agreement first.
+
 ## Where is the information saved?
 
 **Only in the browser you use, on that device.** There is no login and no server. Nothing graduates enter is sent anywhere, and managers and the programme team cannot see it. This means:
@@ -60,12 +68,12 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 
 | Path | What it is |
 |---|---|
-| `*.html` | The pages |
+| `*.html` | The pages (`admin.html` is the Programme team view, not in the menu) |
 | `assets/site.css` | All styles, including the tile dashboard theme (light grey and white, navy, a hint of gold) and the print layout |
 | `assets/site.js` | Header (menu, icons, search and dark-mode buttons), page banners, footer and the company, objectives, skills and FAQ sections |
 | `assets/theme.js` | Sets the light or dark theme before the page is drawn |
 | `assets/store.js` | Saves, checks, backs up and restores what graduates enter |
-| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages and the week-ahead rules), `agent.js` (the AI agent button), `search.js` (the header search), `meetings.js` (meetings and feedback) and one script per section |
+| `assets/hub/*.js` | `common.js` (shared helpers, including the celebration messages and the week-ahead rules), `agent.js` (the AI agent button), `admin.js` (the Programme team view), `search.js` (the header search), `meetings.js` (meetings and feedback) and one script per section |
 | `src/config.js` | Names, programme start and end dates, contact email, optional `hubUrl`, dummy-data banner switch |
 | `src/data/*.js` | Content you replace: `company`, `team`, `feedback`, `overview`, `content`, `placement`, `links`, `learning`, `networks` |
 
