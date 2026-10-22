@@ -188,22 +188,25 @@
       el("p", { class: "muted", text: "Your name and role, your programme dates and week, your progress percentages, and how many goals, tasks and overdue items you have." })
     ]);
     sec.appendChild(basics);
-    var goalsId = "share-goals", updId = "share-update";
-    var goalsBox = el("input", { type: "checkbox", id: goalsId }), updBox = el("input", { type: "checkbox", id: updId });
+    var goalsBox = el("input", { type: "checkbox", id: "share-goals" }), updBox = el("input", { type: "checkbox", id: "share-update" });
+    var wgBox = el("input", { type: "checkbox", id: "share-weekly-goals" }), refBox = el("input", { type: "checkbox", id: "share-reflections" });
     sec.appendChild(el("fieldset", { class: "share-opts" }, [
       el("legend", { text: "Also include (off unless you tick it)" }),
-      el("div", { class: "check" }, [goalsBox, el("label", { for: goalsId, text: "My goal titles and how far along each is" })]),
-      el("div", { class: "check" }, [updBox, el("label", { for: updId, text: "My weekly progress update (how it is going, and my note)" })])
+      el("div", { class: "check" }, [goalsBox, el("label", { for: "share-goals", text: "My goal titles and how far along each is" })]),
+      el("div", { class: "check" }, [updBox, el("label", { for: "share-update", text: "My weekly progress updates (every week so far: how it is going, and my note)" })]),
+      el("div", { class: "check" }, [wgBox, el("label", { for: "share-weekly-goals", text: "My weekly goals (each week\u2019s goals and whether I finished them)" })]),
+      el("div", { class: "check" }, [refBox, el("label", { for: "share-reflections", text: "My weekly reflections (what I learnt, what went well, what was hard, what I will focus on)" })]),
+      el("p", { class: "muted share-warn", text: "Reflections are personal. Only tick this if you are happy for the programme team to read them." })
     ]));
-    sec.appendChild(el("p", { class: "muted", text: "Never included, whatever you tick: 1:1 meeting notes, feedback, reflections, contacts, career interests, your email address and achievement details." }));
+    sec.appendChild(el("p", { class: "muted", text: "Never included, whatever you tick: 1:1 meeting notes, your feedback log, contacts, career interests, your email address and achievement details." }));
     var pre = el("pre", { class: "update-text", tabindex: "0", "aria-label": "Exact contents of the summary file" });
     var det = el("details", {}, [el("summary", { text: "Preview exactly what will be in the file" }), pre]);
     sec.appendChild(det);
-    function opts() { return { goals: goalsBox.checked, update: updBox.checked }; }
+    function opts() { return { goals: goalsBox.checked, updates: updBox.checked, weeklyGoals: wgBox.checked, reflections: refBox.checked }; }
     function fileText() { return JSON.stringify(Hub.buildSummary(opts()), null, 2); }
     function fileName() { return "graduate-hub-summary-" + (Hub.slug(S.state.profile.name) || "me") + "-" + S.today() + ".json"; }
     function refresh() { pre.textContent = fileText(); }
-    goalsBox.addEventListener("change", refresh); updBox.addEventListener("change", refresh);
+    [goalsBox, updBox, wgBox, refBox].forEach(function (c) { c.addEventListener("change", refresh); });
     det.addEventListener("toggle", refresh);
     refresh();
     Hub.onChange("share", refresh);

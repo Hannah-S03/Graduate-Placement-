@@ -4,7 +4,7 @@
 (function () {
   "use strict";
   var Hub = window.Hub, el = Hub.el, S = Hub.store, R = window.SiteRenderers;
-  var KEY = "gradHub.admin.v1", BACKUP_KEY = "gradHub.admin.v1.backup", MAX_FILE = 200 * 1024, MAX_FILES = 100, MAX_GRADS = 500, STALE_DAYS = 14;
+  var KEY = "gradHub.admin.v1", BACKUP_KEY = "gradHub.admin.v1.backup", MAX_FILE = 500 * 1024, MAX_FILES = 100, MAX_GRADS = 500, STALE_DAYS = 14;
 
   var storage = null;
   try { storage = window.localStorage; storage.setItem("__admin_test", "1"); storage.removeItem("__admin_test"); } catch (e) { storage = null; }
@@ -33,8 +33,8 @@
       programme: { start: S.dateStr(pr.start), end: S.dateStr(pr.end), status: oneOf(pr.status, ["none", "before", "during", "after"], "none"), week: num(pr.week, 0, 60, 0), totalWeeks: num(pr.totalWeeks, 1, 60, 12), pct: num(pr.pct, 0, 100, 0) },
       progress: { overall: pctOrNull(pg.overall), goals: pctOrNull(pg.goals), milestones: pctOrNull(pg.milestones), training: pctOrNull(pg.training) },
       counts: { goals: num(ct.goals, 0, 9999, 0), goalsDone: num(ct.goalsDone, 0, 9999, 0), tasks: num(ct.tasks, 0, 9999, 0), tasksDone: num(ct.tasksDone, 0, 9999, 0), overdue: num(ct.overdue, 0, 9999, 0) },
-      shared: { goals: sh.goals === true, update: sh.update === true },
-      goals: [], update: null
+      shared: { goals: sh.goals === true, update: sh.update === true, updates: sh.updates === true, weeklyGoals: sh.weeklyGoals === true, reflections: sh.reflections === true },
+      goals: [], update: null, updates: [], weeklyGoals: [], reflections: []
     };
     if (out.shared.goals && Array.isArray(raw.goals)) {
       out.goals = raw.goals.slice(0, 50).map(function (x) {
@@ -45,6 +45,29 @@
       var u = raw.update, mood = num(u.mood, 0, 5, 0), note = str(u.note, 280).trim();
       if (mood || note) out.update = { week: num(u.week, 0, 60, 0), mood: mood, note: note, updated: S.dateStr(u.updated) };
     }
+    // weekly reports: only kept when the graduate ticked that box; one entry per week (1 to 52), sorted by week
+    function byWeek(list, build) {
+      var seen = {}, out2 = [];
+      (Array.isArray(list) ? list.slice(0, 120) : []).forEach(function (x) {
+        if (!isObj(x)) return;
+        var w = num(x.week, 0, 99, 0); if (w < 1 || w > 52) return;
+        var item = build(x, w); if (item) seen["w" + w] = item;
+      });
+      Object.keys(seen).forEach(function (k) { out2.push(seen[k]); });
+      return out2.sort(function (a, b) { return a.week - b.week; });
+    }
+    if (out.shared.updates) out.updates = byWeek(raw.updates, function (x, w) {
+      var mood = num(x.mood, 0, 5, 0), note = str(x.note, 280).trim();
+      return mood || note ? { week: w, mood: mood, note: note, updated: S.dateStr(x.updated) } : null;
+    });
+    if (out.shared.weeklyGoals) out.weeklyGoals = byWeek(raw.weeklyGoals, function (x, w) {
+      var goals = (Array.isArray(x.goals) ? x.goals.slice(0, 50) : []).map(function (g) { return isObj(g) ? { text: str(g.text, 200).trim(), done: g.done === true } : null; }).filter(function (g) { return g && g.text; });
+      return goals.length ? { week: w, goals: goals } : null;
+    });
+    if (out.shared.reflections) out.reflections = byWeek(raw.reflections, function (x, w) {
+      var r = { week: w, learnt: str(x.learnt, 2000).trim(), wentWell: str(x.wentWell, 2000).trim(), hard: str(x.hard, 2000).trim(), focusNext: str(x.focusNext, 2000).trim(), updated: S.dateStr(x.updated) };
+      return r.learnt || r.wentWell || r.hard || r.focusNext ? r : null;
+    });
     return { value: out };
   }
 
@@ -289,6 +312,51 @@
       return box;
     }
 
+    // The weekly reports the graduate chose to share: progress updates, weekly goals and reflections, week by week, newest first.
+    function weeklyReports(s) {
+      var sh = s.shared, box = el("div", { class: "admin-weekly" });
+      box.appendChild(el("h3", { text: "Weekly reports" }));
+      var kinds = [{ key: "updates", one: "progress update", many: "progress updates" }, { key: "weeklyGoals", one: "goal set", many: "goal sets" }, { key: "reflections", one: "reflection", many: "reflections" }];
+      var shared = kinds.filter(function (k) { return sh[k.key]; }), notShared = kinds.filter(function (k) { return !sh[k.key]; });
+      if (!shared.length) { box.appendChild(el("p", { class: "muted", text: "This graduate did not share weekly reports." })); return box; }
+      box.appendChild(el("p", { class: "muted", text: "Weekly reports shared: " + shared.map(function (k) { return Hub.plural(s[k.key].length, k.one, k.many); }).join(", ") + (notShared.length ? ". Not shared: " + notShared.map(function (k) { return k.many; }).join(", ") : "") + "." }));
+      function find(list, w) { return list.filter(function (x) { return x.week === w; })[0]; }
+      var last = 0;
+      shared.forEach(function (k) { s[k.key].forEach(function (x) { if (x.week > last) last = x.week; }); });
+      if ((s.programme.status === "during" || s.programme.status === "after") && s.programme.week > last) last = s.programme.week;
+      for (var w = last; w >= 1; w--) {
+        var art = el("article", { class: "week-report" }, [el("h4", { text: "Week " + w })]);
+        if (sh.updates) {
+          var u = find(s.updates, w), row = el("p", {}, [el("strong", { text: "Progress update: " })]);
+          if (u) { row.appendChild(document.createTextNode((Hub.moodLabel(u.mood) || "No rating") + (u.note ? " \u2013 " + u.note : ""))); } else { row.appendChild(el("span", { class: "muted", text: "nothing written" })); }
+          art.appendChild(row);
+        }
+        if (sh.weeklyGoals) {
+          var wg = find(s.weeklyGoals, w);
+          if (!wg) art.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), el("span", { class: "muted", text: "none set" })]));
+          else {
+            var done = wg.goals.filter(function (g) { return g.done; }).length;
+            art.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), done + " of " + wg.goals.length + " done"]));
+            var ul = el("ul", { class: "plain wk-goals" });
+            wg.goals.forEach(function (g) { ul.appendChild(el("li", { class: g.done ? "is-done" : "" }, [el("span", { class: "visually-hidden", text: g.done ? "Done: " : "Not done: " }), el("span", { "aria-hidden": "true", text: g.done ? "\u2713 " : "\u25CB " }), g.text])); });
+            art.appendChild(ul);
+          }
+        }
+        if (sh.reflections) {
+          var rf = find(s.reflections, w);
+          if (!rf) art.appendChild(el("p", {}, [el("strong", { text: "Reflection: " }), el("span", { class: "muted", text: "nothing written" })]));
+          else {
+            art.appendChild(el("p", {}, [el("strong", { text: "Reflection" })]));
+            var dl = el("dl", { class: "wk-reflection" });
+            [["learnt", "What I learnt"], ["wentWell", "What went well"], ["hard", "What was hard"], ["focusNext", "Focus next"]].forEach(function (f) { if (rf[f[0]]) { dl.appendChild(el("dt", { text: f[1] })); dl.appendChild(el("dd", { text: rf[f[0]] })); } });
+            art.appendChild(dl);
+          }
+        }
+        box.appendChild(art);
+      }
+      return box;
+    }
+
     function notesBlock(rec) {
       var box = el("div", { class: "admin-notes" });
       box.appendChild(el("h3", { text: "Your notes" }));
@@ -360,6 +428,7 @@
       if (!s.shared.update) sec.appendChild(el("p", { class: "muted", text: "This graduate did not share their weekly update." }));
       else if (!s.update) sec.appendChild(el("p", { class: "muted", text: "No update was saved for this week." }));
       else sec.appendChild(el("p", {}, [el("strong", { text: Hub.moodLabel(s.update.mood) || "No rating" }), s.update.note ? " – " : "", s.update.note || ""]));
+      sec.appendChild(weeklyReports(s));
       sec.appendChild(trend(rec));
       sec.appendChild(notesBlock(rec));
       var rm = Hub.confirmButton({ label: "Remove this graduate", message: "This removes their summaries and your notes about them from this browser. Continue?", confirmLabel: "Yes, remove", onConfirm: function () {

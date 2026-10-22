@@ -594,8 +594,8 @@
   };
 
   // ----- progress summary: the file a graduate can choose to send to the programme team -----
-  // Only what the graduate ticks is included. Never included: 1:1 notes, feedback, reflections, contacts, career interests,
-  // email address, achievements text. The programme team view (admin.html) reads this same shape.
+  // Only what the graduate ticks is included (goal titles, weekly updates, weekly goals, weekly reflections). Never included: 1:1 notes,
+  // feedback log, contacts, career interests, email address, achievements text. The programme team view (admin.html) reads this same shape.
   Hub.SUMMARY_KIND = "graduate-hub-summary";
   // The email draft address for the summary: the programme team address if set in config, otherwise the contact email.
   Hub.summaryMailto = function (fileName) {
@@ -608,7 +608,9 @@
   Hub.buildSummary = function (opts) {
     opts = opts || {};
     var st = S.state, p = st.profile, pl = S.programme(), sum = Hub.progressSummary(), cw = Hub.currentWeek();
-    var tasks = 0, tasksDone = 0, goalsDone = 0;
+    var tasks = 0, tasksDone = 0, goalsDone = 0, wantUpd = !!(opts.updates || opts.update);
+    function weeks(map) { return Object.keys(map).map(Number).filter(function (n) { return n >= 1 && n <= 52; }).sort(function (a, b) { return a - b; }); }
+    function cut(t) { t = String(t || ""); return t.length > 2000 ? t.slice(0, 1999) + "\u2026" : t; }
     st.goals.forEach(function (g) { var c = Hub.taskCounts(g); tasks += c.total; tasksDone += c.completed; if (Hub.goalStatus(g) === "done") goalsDone++; });
     function part(key) { var x = sum.parts.filter(function (q) { return q.key === key; })[0]; return x && x.pct !== null ? Math.round(x.pct) : null; }
     var out = {
@@ -617,10 +619,16 @@
       programme: { start: pl.startDate || "", end: pl.endDate || "", status: pl.status, week: pl.status === "during" ? pl.week : pl.status === "after" ? pl.totalWeeks : 0, totalWeeks: pl.totalWeeks, pct: pl.pct || 0 },
       progress: { overall: sum.overall, goals: part("goals"), milestones: part("milestones"), training: part("training") },
       counts: { goals: st.goals.length, goalsDone: goalsDone, tasks: tasks, tasksDone: tasksDone, overdue: Hub.reminders().filter(function (r) { return r.kind === "danger"; }).length },
-      shared: { goals: !!opts.goals, update: !!opts.update }
+      shared: { goals: !!opts.goals, update: wantUpd, updates: wantUpd, weeklyGoals: !!opts.weeklyGoals, reflections: !!opts.reflections }
     };
     if (opts.goals) out.goals = st.goals.map(function (g) { var c = Hub.taskCounts(g); return { title: g.title, status: Hub.goalStatus(g), target: g.target, tasksDone: c.completed, tasksTotal: c.total }; });
-    if (opts.update) { var up = st.updates[String(cw.week)]; out.update = up && (up.mood || up.note) ? { week: cw.week, mood: up.mood, note: up.note, updated: up.updated } : null; }
+    if (wantUpd) {
+      var up = st.updates[String(cw.week)];
+      out.update = up && (up.mood || up.note) ? { week: cw.week, mood: up.mood, note: up.note, updated: up.updated } : null;
+      out.updates = weeks(st.updates).map(function (w) { var u = st.updates[String(w)]; return { week: w, mood: u.mood, note: u.note, updated: u.updated }; });
+    }
+    if (opts.weeklyGoals) out.weeklyGoals = weeks(st.weeklyGoals).map(function (w) { return { week: w, goals: st.weeklyGoals[String(w)].map(function (g) { return { text: g.text, done: g.done }; }) }; });
+    if (opts.reflections) out.reflections = weeks(st.reflections).map(function (w) { var r = st.reflections[String(w)]; return { week: w, learnt: cut(r.learnt), wentWell: cut(r.wentWell), hard: cut(r.hard), focusNext: cut(r.focusNext), updated: r.updated }; });
     return out;
   };
 

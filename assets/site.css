@@ -750,3 +750,17 @@ table.plain-table th, table.plain-table td { text-align: left; padding: 4px 14px
   [data-theme="dark"] .admin-drop { background: #0f1e29; }
   [data-theme="dark"] table.cohort tr.is-selected td { background: #1e3547; }
 }
+
+/* weekly reports in the Programme team view */
+.share-warn { margin: 4px 0 0; font-size: .93rem; }
+.admin-weekly h3 { font-family: inherit; font-size: .86rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 4px; }
+.week-report { border-top: 1px solid var(--border); padding: 8px 0 4px; }
+.week-report h4 { margin: 0 0 4px; font-size: 1rem; }
+.week-report p { margin: 2px 0; overflow-wrap: anywhere; }
+.wk-goals { margin: 2px 0 6px; }
+.wk-goals li { padding: 1px 0; margin: 0; overflow-wrap: anywhere; }
+.wk-goals li.is-done { color: var(--muted); }
+.wk-reflection { margin: 2px 0 6px; }
+.wk-reflection dt { font-weight: 700; font-size: .93rem; margin-top: 4px; }
+.wk-reflection dd { margin: 0 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media print { .week-report { break-inside: avoid; } }
