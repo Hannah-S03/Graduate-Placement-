@@ -276,14 +276,16 @@
       fillGreeting(); hello.hidden = false;
       var prog = top.querySelector(".programme");
       if (prog) { prog.classList.add("has-hello"); prog.insertBefore(hello, prog.firstChild); }
-      // half way and programme complete: a dismissible note inside the hero card, shown until dismissed
-      var pl = S.programme(), ckey = pl.status === "after" ? "complete" : (pl.status === "during" && pl.pct >= 50 ? "half" : "");
-      if (prog && ckey && !S.state.celebrated[ckey]) {
-        var note = el("div", { class: "celebrate-note", role: "status" }, [el("span", { text: ckey === "complete" ? "Programme complete. Well done on finishing the whole scheme!" : "You are half way through the programme. Well done!" })]);
-        var dismiss = el("button", { type: "button", class: "btn small secondary", text: "Dismiss" });
-        dismiss.addEventListener("click", function () { S.state.celebrated[ckey] = true; if (ckey === "complete") S.state.celebrated.half = true; S.save(); if (note.parentNode) note.parentNode.removeChild(note); });
-        note.appendChild(dismiss); prog.appendChild(note);
-        prog.classList.add("celebrate-pulse"); window.setTimeout(function () { prog.classList.remove("celebrate-pulse"); }, 3600);
+      // A sentence under the progress bar that always says where the graduate is (a quarter, half way, three quarters ...).
+      // It is redrawn each week; the gold highlight plays once the first time each stage is reached.
+      var pl = S.programme(), stage = Hub.programmeStage(pl);
+      if (prog && stage) {
+        prog.appendChild(el("p", { class: "stage-note", "data-stage": stage.key, text: stage.text }));
+        var seen = S.state.celebrated["stage:" + stage.key] || (stage.key === "half" && S.state.celebrated.half) || (stage.key === "complete" && S.state.celebrated.complete);
+        if (!seen) {
+          S.state.celebrated["stage:" + stage.key] = true; S.save();
+          if (stage.key !== "start") { prog.classList.add("celebrate-pulse"); window.setTimeout(function () { prog.classList.remove("celebrate-pulse"); }, 3600); }
+        }
       }
       statTiles().forEach(function (n) { top.appendChild(n); });
       var p = S.state.profile;

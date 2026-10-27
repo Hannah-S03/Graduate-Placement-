@@ -89,7 +89,7 @@
       var notes = Array.isArray(r.notes) ? r.notes.slice(0, 500).map(function (n) {
         return isObj(n) && str(n.text, 4000).trim() ? { id: str(n.id, 60) || uid(), date: S.dateStr(n.date) || c.value.generated, text: str(n.text, 4000).trim() } : null;
       }).filter(Boolean) : [];
-      out.grads[gradKey(c.value)] = { latest: c.value, history: hist, notes: notes };
+      out.grads[gradKey(c.value)] = { latest: c.value, history: hist, notes: notes, setGoals: Hub.cleanProgGoals(r.setGoals) };
     });
     return out;
   }
@@ -110,7 +110,7 @@
     var k = gradKey(s), rec = state.grads[k], result;
     if (!rec) {
       if (Object.keys(state.grads).length >= MAX_GRADS) return { error: "Too many graduates are loaded (the limit is " + MAX_GRADS + ")." };
-      state.grads[k] = { latest: s, history: [histEntry(s)], notes: [] };
+      state.grads[k] = { latest: s, history: [histEntry(s)], notes: [], setGoals: [] };
       return { action: "added" };
     }
     var has = rec.history.filter(function (h) { return h.generated === s.generated; })[0];
@@ -357,6 +357,100 @@
       return box;
     }
 
+    // Goals the head sets for this graduate. They reach the graduate's hub only when the graduate imports the goals file.
+    function setGoalsBlock(rec) {
+      var box = el("div", { class: "admin-setgoals" });
+      box.appendChild(el("h3", { text: "Goals set by the programme team" }));
+      box.appendChild(el("p", { class: "muted", text: "Add or change goals for this graduate. Send them the goals file: goals reach their hub only when they import it. Goals you remove here are not removed from their hub." }));
+      var editing = null, adding = false, host = el("div"), listHost = el("div"), fileHost = el("div");
+      box.appendChild(listHost); box.appendChild(host); box.appendChild(fileHost);
+      var TYPES = [{ value: "development", label: "Development" }, { value: "career", label: "Career" }, { value: "placement", label: "Placement" }];
+      function tasksText(g) { return g.tasks.map(function (t) { return t.text; }).join("\n"); }
+      function fields(isNew) {
+        var f = [
+          { name: "type", label: "Type of goal", type: "select", required: true, options: TYPES },
+          { name: "title", label: "Goal", required: true, maxlength: 200, hint: "What should the graduate achieve?" },
+          { name: "description", label: "Details", type: "textarea", rows: 3, maxlength: 2000, hint: "Why it matters and how to do it." },
+          { name: "target", label: "Target date", type: "date" },
+          { name: "tasks", label: "Tasks", type: "textarea", rows: 4, maxlength: 4000, hint: "One task per line. Up to 50." }
+        ];
+        if (isNew && Object.keys(state.grads).length > 1) f.push({ name: "everyone", label: "Cohort", type: "checks", options: [{ value: "all", label: "Also add this goal for every other graduate" }] });
+        return f;
+      }
+      function buildTasks(text, old) {
+        var lines = String(text || "").split(/\r?\n/).map(function (x) { return x.trim().slice(0, 200); }).filter(Boolean).slice(0, 50), used = {}, out = [];
+        lines.forEach(function (line) {
+          var match = (old || []).filter(function (t) { return t.text === line && !used[t.id]; })[0];
+          if (match) { used[match.id] = true; out.push({ id: match.id, text: line }); } else out.push({ id: "pt-" + uid(), text: line });
+        });
+        return out;
+      }
+      function draw() {
+        listHost.textContent = ""; host.textContent = ""; fileHost.textContent = "";
+        if (!rec.setGoals.length) listHost.appendChild(el("p", { class: "muted", text: "No goals set yet." }));
+        else {
+          var ul = el("ul", { class: "plain" });
+          rec.setGoals.forEach(function (g) {
+            var li = el("li", { class: "set-goal" });
+            li.appendChild(el("strong", { text: g.title }));
+            li.appendChild(el("span", { class: "muted", text: " · " + g.type.charAt(0).toUpperCase() + g.type.slice(1) + (g.target ? " · due " + Hub.fmtDate(g.target) : "") + (g.tasks.length ? " · " + Hub.plural(g.tasks.length, "task", "tasks") : "") }));
+            if (g.description) li.appendChild(el("div", { class: "note-text", text: g.description }));
+            if (g.tasks.length) { var tl = el("ul", { class: "plain" }); g.tasks.forEach(function (t) { tl.appendChild(el("li", { text: "○ " + t.text })); }); li.appendChild(tl); }
+            var edit = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit goal " + g.title });
+            edit.addEventListener("click", function () { editing = g.id; adding = false; draw(); var f = host.querySelector("input[type=text]"); if (f) f.focus(); });
+            var del = Hub.confirmButton({ label: "Remove", ariaLabel: "Remove goal " + g.title, message: "Remove this goal from your list? It stays in the graduate's hub if they have already imported it.", confirmLabel: "Yes, remove", onConfirm: function () {
+              rec.setGoals = rec.setGoals.filter(function (x) { return x.id !== g.id; }); save(); status.say("Goal removed.", false); draw();
+            } });
+            li.appendChild(el("div", { class: "row" }, [edit, del]));
+            ul.appendChild(li);
+          });
+          listHost.appendChild(ul);
+        }
+        var cur = editing ? rec.setGoals.filter(function (g) { return g.id === editing; })[0] : null;
+        if (cur || adding) {
+          var panel = el("div", { class: "set-goal-form" });
+          panel.appendChild(el("h4", { text: cur ? "Edit goal" : "Add a goal" }));
+          panel.appendChild(Hub.form({
+            fields: fields(!cur), values: cur ? { type: cur.type, title: cur.title, description: cur.description, target: cur.target, tasks: tasksText(cur) } : { type: "development" },
+            submitLabel: cur ? "Save goal" : "Add goal", onCancel: function () { editing = null; adding = false; draw(); },
+            onSubmit: function (v) {
+              var tasks = buildTasks(v.tasks, cur ? cur.tasks : []);
+              if (cur) { cur.type = v.type; cur.title = v.title; cur.description = v.description; cur.target = v.target; cur.tasks = tasks; }
+              else {
+                var id = "pg-" + uid(), made = { id: id, type: v.type, title: v.title, description: v.description, target: v.target, tasks: tasks };
+                rec.setGoals.push(made);
+                if (v.everyone && v.everyone.indexOf("all") !== -1) {
+                  Object.keys(state.grads).forEach(function (k) {
+                    var other = state.grads[k]; if (other === rec || other.setGoals.some(function (x) { return x.id === id; })) return;
+                    other.setGoals.push({ id: id, type: made.type, title: made.title, description: made.description, target: made.target, tasks: made.tasks.map(function (t) { return { id: t.id, text: t.text }; }) });
+                  });
+                }
+              }
+              editing = null; adding = false; var saved = save();
+              status.say(saved ? (cur ? "Goal saved." : "Goal added.") : "Your browser would not save this goal, so it will be lost when you leave the page.", !saved);
+              draw();
+            }
+          }));
+          host.appendChild(panel);
+        } else {
+          var add = el("button", { type: "button", class: "btn small", text: "Add a goal" });
+          add.addEventListener("click", function () { adding = true; editing = null; draw(); var f = host.querySelector("input[type=text]"); if (f) f.focus(); });
+          host.appendChild(add);
+        }
+        var dl = el("button", { type: "button", class: "btn secondary", text: "Download goals file for " + rec.latest.graduate.name });
+        if (!rec.setGoals.length) { dl.disabled = true; dl.setAttribute("aria-describedby", "goals-file-hint"); }
+        dl.addEventListener("click", function () {
+          var file = { kind: Hub.GOALS_KIND, version: 1, generated: S.today(), "for": { name: rec.latest.graduate.name }, goals: rec.setGoals };
+          Hub.download("graduate-hub-goals-" + (Hub.slug(rec.latest.graduate.name) || "graduate") + "-" + S.today() + ".json", JSON.stringify(file, null, 2), "application/json");
+          status.say("The goals file was downloaded. Send it to " + rec.latest.graduate.name + ": the goals reach their hub when they import it on My journey.", false);
+        });
+        fileHost.appendChild(el("div", { class: "row" }, [dl]));
+        if (!rec.setGoals.length) fileHost.appendChild(el("p", { class: "muted", id: "goals-file-hint", text: "Add a goal first." }));
+      }
+      draw();
+      return box;
+    }
+
     function notesBlock(rec) {
       var box = el("div", { class: "admin-notes" });
       box.appendChild(el("h3", { text: "Your notes" }));
@@ -424,6 +518,7 @@
         });
         sec.appendChild(gl);
       }
+      sec.appendChild(setGoalsBlock(rec));
       sec.appendChild(el("h3", { text: "Weekly progress update" }));
       if (!s.shared.update) sec.appendChild(el("p", { class: "muted", text: "This graduate did not share their weekly update." }));
       else if (!s.update) sec.appendChild(el("p", { class: "muted", text: "No update was saved for this week." }));

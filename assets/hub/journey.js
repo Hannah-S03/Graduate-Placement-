@@ -7,10 +7,10 @@
 
   R.journey = function (t) {
     var status = Hub.status();
-    var summary = el("div"), addHost = el("div"), filterHost = el("div"), list = el("div"), suggest = el("div");
+    var summary = el("div"), importHost = el("div"), addHost = el("div"), filterHost = el("div"), list = el("div"), suggest = el("div");
     var ui = { adding: false, editing: null, editTask: null, openComments: {}, openGoals: {}, addingTask: {}, suggestOpen: false, type: "all", status: "all" };
     Hub.notices(t);
-    [status, summary, addHost, filterHost, list, suggest].forEach(function (n) { t.appendChild(n); });
+    [status, summary, importHost, addHost, filterHost, list, suggest].forEach(function (n) { t.appendChild(n); });
 
     function sorted() {
       return S.state.goals.slice().sort(function (a, b) {
@@ -202,7 +202,7 @@
       }));
       head.appendChild(menu.wrap);
       card.appendChild(head);
-      var meta = el("div", { class: "item-meta" }, [Hub.badge(typeLabel(g.type), "info"), Hub.badge(Hub.goalStatusLabel[st], st === "done" ? "ok" : st === "inprogress" ? "warn" : "info")]);
+      var meta = el("div", { class: "item-meta" }, [Hub.badge(typeLabel(g.type), "info"), g.setBy === "programme" ? Hub.badge("Set by the programme team", "info") : null, Hub.badge(Hub.goalStatusLabel[st], st === "done" ? "ok" : st === "inprogress" ? "warn" : "info")]);
       if (g.target) { var db = Hub.dueBadge(g.target, st === "done"); meta.appendChild(Hub.badge(st === "done" ? "Target " + Hub.fmtDate(g.target) : db.text, db.kind)); }
       meta.appendChild(el("span", { class: "muted task-count", text: counts.total ? counts.completed + " of " + Hub.plural(counts.total, "task", "tasks") + " completed" : "No tasks yet" }));
       card.appendChild(meta);
@@ -272,7 +272,49 @@
       suggest.appendChild(det);
     }
 
-    function renderAll() { renderSummary(); renderAdd(); renderFilters(); renderList(); renderSuggest(); }
+    // ----- goals sent by the programme team: choose a goals file, see what it would change, then confirm -----
+    function renderImport() {
+      importHost.textContent = "";
+      var det = el("details", { class: "goals-import" }, [el("summary", { text: "Goals from the programme team" })]);
+      det.appendChild(el("p", { text: "If the programme team has sent you a goals file, choose it here. You will see what it would add or change, and nothing changes until you confirm. Your own tasks, progress and comments are never overwritten." }));
+      var fid = "goals-file", input = el("input", { type: "file", id: fid, accept: ".json,application/json" }), out = el("div", { class: "goals-preview" });
+      det.appendChild(el("div", { class: "restore" }, [el("label", { for: fid, text: "Choose a goals file" }), input]));
+      det.appendChild(out);
+      input.addEventListener("change", function () {
+        out.textContent = "";
+        var file = input.files && input.files[0]; if (!file) return;
+        function fail(msg) { out.appendChild(el("p", { class: "status status-error", role: "alert", text: msg })); }
+        if (file.size > 200 * 1024) return fail("That file is too large to be a goals file.");
+        var rd = new FileReader();
+        rd.onerror = function () { fail("That file could not be read."); };
+        rd.onload = function () {
+          var parsed; try { parsed = JSON.parse(String(rd.result || "")); } catch (e) { return fail("That file is not valid. Choose a goals file you were sent."); }
+          var c = Hub.cleanGoalsFile(parsed); if (c.error) return fail(c.error);
+          var plan = Hub.planGoalsImport(c.value), mine = (S.state.profile.name || "").trim().toLowerCase();
+          var mismatch = c.value.forName && mine && c.value.forName.toLowerCase() !== mine;
+          if (mismatch) out.appendChild(el("p", { class: "notice", role: "alert", text: "This file is for " + c.value.forName + ", but your profile name is " + S.state.profile.name + ". Only import it if it is meant for you." }));
+          out.appendChild(el("p", { text: "Sent " + Hub.fmtDate(c.value.generated) + ". If you import it:" }));
+          var ul = el("ul", { class: "plain" });
+          plan.added.forEach(function (g) { ul.appendChild(el("li", {}, [Hub.badge("New", "ok"), " " + g.title + (g.tasks.length ? " (" + Hub.plural(g.tasks.length, "task", "tasks") + ")" : "")])); });
+          plan.updated.forEach(function (u) { ul.appendChild(el("li", {}, [Hub.badge("Updated", "warn"), " " + u.goal.title + ": " + u.changes.join(", ")])); });
+          plan.unchanged.forEach(function (u) { ul.appendChild(el("li", {}, [Hub.badge("No change", "info"), " " + u.goal.title])); });
+          out.appendChild(ul);
+          if (!plan.added.length && !plan.updated.length) { out.appendChild(el("p", { class: "muted", text: "There is nothing new in this file." })); return; }
+          var yes = el("button", { type: "button", class: "btn", text: mismatch ? "Import anyway" : "Import these goals" }), no = el("button", { type: "button", class: "btn secondary", text: "Cancel" });
+          yes.addEventListener("click", function () {
+            Hub.applyGoalsImport(plan); Hub.save(status, Hub.plural(plan.added.length, "goal was", "goals were") + " added and " + Hub.plural(plan.updated.length, "goal was", "goals were") + " updated.");
+            renderAll();
+          });
+          no.addEventListener("click", function () { out.textContent = ""; input.value = ""; input.focus(); });
+          out.appendChild(el("div", { class: "row" }, [yes, no]));
+          yes.focus();
+        };
+        rd.readAsText(file);
+      });
+      importHost.appendChild(det);
+    }
+
+    function renderAll() { renderSummary(); renderImport(); renderAdd(); renderFilters(); renderList(); renderSuggest(); }
     renderAll();
   };
 })();

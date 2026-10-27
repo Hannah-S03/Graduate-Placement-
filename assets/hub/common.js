@@ -108,6 +108,13 @@
       if (def.hint) wrap.appendChild(el("p", { class: "hint", id: hintId, text: def.hint }));
       if (type === "textarea") {
         input = el("textarea", { id: id, rows: String(def.rows || 3), maxlength: String(def.maxlength || 2000) });
+        // autogrow: the box gets taller as the person types, so long text never needs an inner scroll (the resize handle still works)
+        if (def.autogrow) {
+          input.classList.add("autogrow");
+          input._grow = function () { if (!input.scrollHeight) return; input.style.height = "auto"; input.style.height = (input.scrollHeight + 2) + "px"; };
+          input.addEventListener("input", input._grow);
+          window.setTimeout(input._grow, 0);
+        }
       } else if (type === "select") {
         input = el("select", { id: id });
         (def.options || []).forEach(function (o) { input.appendChild(el("option", { value: o.value, text: o.label })); });
@@ -129,7 +136,7 @@
         input._sync = syncOut;
       } else wrap.appendChild(input);
       getter = function () { return type === "range" ? Number(input.value) : input.value.trim(); };
-      setter = function (v) { input.value = v === undefined || v === null ? "" : String(v); if (input._sync) input._sync(); };
+      setter = function (v) { input.value = v === undefined || v === null ? "" : String(v); if (input._sync) input._sync(); if (input._grow) input._grow(); };
       focusTarget = function () { input.focus(); };
     }
     var err = el("p", { class: "field-error", id: errId, role: "alert" });
@@ -442,6 +449,19 @@
     }).filter(Boolean).concat(st.learning.custom.map(function (c) { return { title: c.title, planned: c.planned, status: c.status }; }));
   };
 
+  // The sentence under the progress bar. Says where the graduate is now and how long is left, and changes as the programme goes on:
+  // getting started, a quarter, half way, three quarters, the final week, complete. Returns { key, text } or null before the programme starts.
+  Hub.programmeStage = function (pl) {
+    if (pl.status === "after") return { key: "complete", text: "Programme complete. Well done on finishing the whole scheme!" };
+    if (pl.status !== "during") return null;
+    var left = pl.totalWeeks - pl.week, togo = left === 1 ? "1 week to go" : left + " weeks to go", p = pl.pct;
+    if (left === 0) return { key: "final", text: "This is your final week. Finish strong!" };
+    if (p >= 75) return { key: "q3", text: "You are " + (p === 75 ? "three quarters" : "more than three quarters") + " of the way through the programme. " + togo + "." };
+    if (p >= 50) return { key: "half", text: "You are " + (p === 50 ? "half way" : "more than half way") + " through the programme. " + togo + "." };
+    if (p >= 25) return { key: "q1", text: "You are " + (p === 25 ? "a quarter" : "more than a quarter") + " of the way through the programme. " + togo + "." };
+    return { key: "start", text: "You are getting started. " + togo + "." };
+  };
+
   // The week the weekly goals and progress update belong to: this week during the programme, week 1 before it, the last week after it.
   Hub.currentWeek = function () {
     var pl = S.programme();
@@ -506,9 +526,11 @@
       if (wk >= 1 && wk <= pl.totalWeeks) pw = { week: wk, total: pl.totalWeeks };
       else if (wk < 1 && S.weekOf(pl.startDate, end) >= 1) pw = { week: 1, total: pl.totalWeeks };
     }
-    var all = Hub.agenda(0, { all: true }), deadlines = [], overdue = [], days = [];
+    var all = Hub.agenda(0, { all: true }), deadlines = [], overdue = [], days = [], training = { overdue: 0, dueThisWeek: 0 };
     for (var i = 0; i < 7; i++) days.push({ date: S.addDays(start, i), label: Hub.shortDate(S.addDays(start, i)), items: [] });
     all.forEach(function (a) {
+      // required training modules are not priorities: they are only counted, and mentioned in one line
+      if (a.kind === "Training due") { if (a.date < today) training.overdue++; else if (a.date >= start && a.date <= end) training.dueThisWeek++; return; }
       if (DUE_KINDS[a.kind]) {
         if (a.date < today) overdue.push(a);
         else if (a.date >= start && a.date <= end) deadlines.push(a);
@@ -518,16 +540,24 @@
     });
     overdue.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
 
-    // priorities: overdue, then due this week, then tasks in progress, weekly goals, meeting actions, the reflection
-    var pri = [];
+    // Priorities are tasks first: tasks in progress and the next task for each open goal, the goals that are due soonest first;
+    // then goals that are due or overdue but have no tasks yet, milestones, weekly goals, actions from 1:1s and the reflection.
+    var pri = [], inProgress = 0, cand = [], nudges = [];
     function add(title, reason, href) { pri.push({ title: title, reason: reason, href: href }); }
-    overdue.forEach(function (a) { add(a.title, "Overdue: was due " + Hub.shortDate(a.date), a.href); });
-    deadlines.forEach(function (a) { add(a.title, a.kind + " " + Hub.shortDate(a.date), a.href); });
-    var inProgress = 0;
+    function when(date) { return !date ? "no due date" : date < today ? "overdue (was due " + Hub.shortDate(date) + ")" : "due " + Hub.shortDate(date); }
     st.goals.forEach(function (g) {
       if (Hub.goalStatus(g) === "done") return;
-      (g.tasks || []).forEach(function (t) { if (t.status === "inprogress") { inProgress++; add(t.text, "Task in progress · goal: " + g.title, "journey.html"); } });
+      var tasks = g.tasks || [], key = g.target || "9999-12-31";
+      tasks.forEach(function (t, i) { if (t.status === "inprogress") { inProgress++; cand.push({ key: key, sub: 0, n: cand.length, p: { title: t.text, reason: "In progress \u00B7 goal: " + g.title + " \u00B7 " + when(g.target), href: "journey.html" } }); } });
+      var next = tasks.filter(function (t) { return t.status === "notstarted"; })[0];
+      if (next) cand.push({ key: key, sub: 1, n: cand.length, p: { title: next.text, reason: "Next task \u00B7 goal: " + g.title + " \u00B7 " + when(g.target), href: "journey.html" } });
+      if (!tasks.length && g.target && g.target <= end) nudges.push({ key: key, p: { title: "Add tasks to goal \u201C" + g.title + "\u201D", reason: g.target < today ? "Overdue: was due " + Hub.shortDate(g.target) : "Due " + Hub.shortDate(g.target), href: "journey.html" } });
     });
+    cand.sort(function (a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : a.sub - b.sub || a.n - b.n; });
+    cand.forEach(function (c) { pri.push(c.p); });
+    nudges.sort(function (a, b) { return a.key < b.key ? -1 : a.key > b.key ? 1 : 0; }).forEach(function (n) { pri.push(n.p); });
+    overdue.filter(function (a) { return a.kind === "Milestone"; }).forEach(function (a) { add(a.title, "Overdue: was due " + Hub.shortDate(a.date), a.href); });
+    deadlines.filter(function (a) { return a.kind === "Milestone"; }).forEach(function (a) { add(a.title, "Milestone " + Hub.shortDate(a.date), a.href); });
     if (pw) (st.weeklyGoals[String(pw.week)] || []).forEach(function (g) { if (!g.done) add(g.text, "Weekly goal for week " + pw.week, "index.html"); });
     st.meetings.forEach(function (m) {
       (m.actions || []).forEach(function (a) { if (!a.done) add(a.text, "Action from your 1:1" + (m.withWho ? " with " + m.withWho : ""), "meetings.html"); });
@@ -538,7 +568,7 @@
     return {
       start: start, end: end, isNextWeek: ref < start, programmeWeek: pw,
       rangeLabel: S.parseDate(start).getMonth() === S.parseDate(end).getMonth() ? DAY_NAMES[S.parseDate(start).getDay()] + " " + S.parseDate(start).getDate() + " to " + Hub.shortDate(end) : Hub.shortDate(start) + " to " + Hub.shortDate(end),
-      priorities: pri.slice(0, 6), morePriorities: Math.max(0, pri.length - 6), days: days, deadlines: deadlines, overdue: overdue,
+      priorities: pri.slice(0, 6), morePriorities: Math.max(0, pri.length - 6), days: days, deadlines: deadlines, overdue: overdue, training: training,
       counts: { inprogress: inProgress, meetings: meetings, deadlines: deadlines.length, overdue: overdue.length },
       empty: !pri.length && !meetings && !deadlines.length && !overdue.length && !days.some(function (d) { return d.items.length; })
     };
@@ -575,7 +605,16 @@
     }
     if (w.deadlines.length) { L.push("", "DEADLINES"); w.deadlines.forEach(function (a) { L.push("- " + Hub.shortDate(a.date) + ": " + a.title); }); }
     if (w.overdue.length) { L.push("", "OVERDUE"); w.overdue.forEach(function (a) { L.push("- " + a.title + " (was due " + Hub.shortDate(a.date) + ")"); }); }
+    var tl = Hub.trainingLine(w); if (tl) L.push("", "TRAINING", "- " + tl);
     return L.join("\n");
+  };
+
+  // One line about required training (training modules are not listed as priorities).
+  Hub.trainingLine = function (w) {
+    var t = w.training || { overdue: 0, dueThisWeek: 0 }, bits = [];
+    if (t.overdue) bits.push(Hub.plural(t.overdue, "required training module is", "required training modules are") + " overdue");
+    if (t.dueThisWeek) bits.push(t.overdue ? t.dueThisWeek + " more due this week" : Hub.plural(t.dueThisWeek, "required training module is", "required training modules are") + " due this week");
+    return bits.length ? bits.join(", ") + " (see Learning)" : "";
   };
 
   // A mailto: link that opens the person's own email app with the overview filled in. Long text is trimmed (long addresses break some mail apps).
@@ -630,6 +669,74 @@
     if (opts.weeklyGoals) out.weeklyGoals = weeks(st.weeklyGoals).map(function (w) { return { week: w, goals: st.weeklyGoals[String(w)].map(function (g) { return { text: g.text, done: g.done }; }) }; });
     if (opts.reflections) out.reflections = weeks(st.reflections).map(function (w) { var r = st.reflections[String(w)]; return { week: w, learnt: cut(r.learnt), wentWell: cut(r.wentWell), hard: cut(r.hard), focusNext: cut(r.focusNext), updated: r.updated }; });
     return out;
+  };
+
+  // ----- goals set by the programme team (a "goals file" the head of programme sends; the graduate chooses to import it) -----
+  Hub.GOALS_KIND = "graduate-hub-goals";
+  var GOAL_TYPES = ["development", "career", "placement"], REF_RE = /^[A-Za-z0-9_-]{1,60}$/;
+  function isPlain(x) { return x !== null && typeof x === "object" && !Array.isArray(x); }
+  function cut(x, n) { return typeof x === "string" ? x.slice(0, n) : ""; }
+  // Cleans a list of goals { id, type, title, description, target, tasks: [{ id, text }] }. Anything invalid is dropped.
+  Hub.cleanProgGoals = function (list) {
+    var seen = {}, out = [];
+    (Array.isArray(list) ? list.slice(0, 100) : []).forEach(function (g) {
+      if (!isPlain(g) || !REF_RE.test(cut(g.id, 60)) || seen["g:" + g.id]) return;
+      var title = cut(g.title, 200).trim(); if (!title) return;
+      var tseen = {}, tasks = [];
+      (Array.isArray(g.tasks) ? g.tasks.slice(0, 50) : []).forEach(function (t) {
+        if (!isPlain(t) || !REF_RE.test(cut(t.id, 60)) || tseen["t:" + t.id]) return;
+        var text = cut(t.text, 200).trim(); if (!text) return;
+        tseen["t:" + t.id] = true; tasks.push({ id: t.id, text: text });
+      });
+      seen["g:" + g.id] = true;
+      out.push({ id: g.id, type: GOAL_TYPES.indexOf(g.type) !== -1 ? g.type : "development", title: title, description: cut(g.description, 2000).trim(), target: S.dateStr(g.target), tasks: tasks });
+    });
+    return out;
+  };
+  // Checks a goals file. Returns { error } or { value: { generated, forName, goals } }.
+  Hub.cleanGoalsFile = function (raw) {
+    if (!isPlain(raw)) return { error: "This is not a goals file." };
+    if (raw.kind !== Hub.GOALS_KIND) return { error: "This is not a Graduate Hub goals file." };
+    if (raw.version !== 1) return { error: "This goals file was made by a different version of the hub, so it cannot be read." };
+    var generated = S.dateStr(raw.generated); if (!generated) return { error: "The goals file has no valid date." };
+    var goals = Hub.cleanProgGoals(raw.goals);
+    if (!goals.length) return { error: "The goals file has no goals in it." };
+    return { value: { generated: generated, forName: cut(isPlain(raw.for) ? raw.for.name : "", 120).trim(), goals: goals } };
+  };
+  // Works out what importing would do, without changing anything: { added, updated, unchanged }.
+  Hub.planGoalsImport = function (value) {
+    var plan = { added: [], updated: [], unchanged: [] };
+    value.goals.forEach(function (pg) {
+      var mine = S.state.goals.filter(function (g) { return g.setBy === "programme" && g.refId === pg.id; })[0];
+      if (!mine) { plan.added.push(pg); return; }
+      var changes = [];
+      if (mine.title !== pg.title) changes.push("title");
+      if ((mine.description || "") !== pg.description) changes.push("details");
+      if ((mine.target || "") !== pg.target) changes.push("target date");
+      if (mine.type !== pg.type) changes.push("type");
+      var have = {}; (mine.tasks || []).forEach(function (t) { if (t.refId) have["t:" + t.refId] = t; });
+      var fresh = pg.tasks.filter(function (t) { return !have["t:" + t.id]; }), renamed = pg.tasks.filter(function (t) { return have["t:" + t.id] && have["t:" + t.id].text !== t.text; });
+      if (fresh.length) changes.push(Hub.plural(fresh.length, "new task", "new tasks"));
+      if (renamed.length) changes.push(Hub.plural(renamed.length, "task renamed", "tasks renamed"));
+      (changes.length ? plan.updated : plan.unchanged).push({ goal: pg, mine: mine, changes: changes });
+    });
+    return plan;
+  };
+  // Makes the changes. The graduate's own task statuses, comments and extra tasks are never overwritten or removed.
+  Hub.applyGoalsImport = function (plan) {
+    plan.added.forEach(function (pg) {
+      S.state.goals.push({ id: S.id(), type: pg.type, title: pg.title, description: pg.description, target: pg.target, progress: 0, created: S.today(), setBy: "programme", refId: pg.id,
+        tasks: pg.tasks.map(function (t) { return { id: S.id(), text: t.text, status: "notstarted", comments: [], refId: t.id }; }) });
+    });
+    plan.updated.forEach(function (u) {
+      var g = u.mine, pg = u.goal;
+      g.title = pg.title; g.description = pg.description; g.target = pg.target; g.type = pg.type;
+      var have = {}; (g.tasks || []).forEach(function (t) { if (t.refId) have["t:" + t.refId] = t; });
+      pg.tasks.forEach(function (t) {
+        if (have["t:" + t.id]) have["t:" + t.id].text = t.text;
+        else { g.tasks = g.tasks || []; g.tasks.push({ id: S.id(), text: t.text, status: "notstarted", comments: [], refId: t.id }); }
+      });
+    });
   };
 
   // ----- calendar files (.ics) -----

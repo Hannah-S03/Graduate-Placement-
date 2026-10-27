@@ -764,3 +764,22 @@ table.plain-table th, table.plain-table td { text-align: left; padding: 4px 14px
 .wk-reflection dt { font-weight: 700; font-size: .93rem; margin-top: 4px; }
 .wk-reflection dd { margin: 0 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media print { .week-report { break-inside: avoid; } }
+
+/* textareas that grow as you type (Reflection) */
+textarea.autogrow { overflow-y: hidden; min-height: 5em; }
+@media (max-width: 700px) { textarea.autogrow { min-height: 4em; } }
+
+/* the sentence under the progress bar (replaces the dismissible half-way note) */
+.stage-note { margin: 12px 0 0; padding: 8px 12px; border-radius: 14px; background: rgba(222, 193, 0, .16); border: 1px solid rgba(238, 216, 74, .7); color: #fff; font-weight: 600; grid-column: 1 / -1; }
+@media print { .stage-note { background: #fff; color: #000; border: 1px solid #999; } }
+.agent-training { margin: 12px 0 0; font-size: .93rem; }
+
+.goals-import { margin: 0 0 12px; }
+.goals-import > summary { cursor: pointer; font-weight: 600; }
+.goals-preview { margin-top: 8px; }
+
+.admin-setgoals h3 { font-family: inherit; font-size: .86rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 4px; }
+.set-goal { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.set-goal .note-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0; }
+.set-goal-form { border: 1px solid var(--border); border-radius: 16px; padding: 10px 14px; margin: 8px 0; background: var(--bg); }
+.set-goal-form h4 { margin: 0 0 6px; }

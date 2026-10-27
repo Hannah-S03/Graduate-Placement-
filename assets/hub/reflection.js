@@ -52,10 +52,10 @@
       if (existing && existing.updated) panel.appendChild(el("p", { class: "muted", text: "Last saved " + Hub.fmtDate(existing.updated) + "." }));
       var form = Hub.form({
         fields: [
-          { name: "learnt", label: "What I learnt this week", type: "textarea", rows: 5, required: true, maxlength: 4000, hint: "New skills, ideas, things that surprised you." },
-          { name: "wentWell", label: "What went well", type: "textarea", rows: 3 },
-          { name: "hard", label: "What was hard", type: "textarea", rows: 3 },
-          { name: "focusNext", label: "My focus for next week", type: "textarea", rows: 2 }
+          { name: "learnt", label: "What I learnt this week", type: "textarea", rows: 13, autogrow: true, required: true, maxlength: 8000, hint: "New skills, ideas, things that surprised you. The box grows as you write." },
+          { name: "wentWell", label: "What went well", type: "textarea", rows: 5, autogrow: true, maxlength: 4000 },
+          { name: "hard", label: "What was hard", type: "textarea", rows: 5, autogrow: true, maxlength: 4000 },
+          { name: "focusNext", label: "My focus for next week", type: "textarea", rows: 3, autogrow: true, maxlength: 4000 }
         ],
         values: existing || {}, submitLabel: existing ? "Save changes" : "Save reflection",
         onSubmit: function (v) {

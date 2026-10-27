@@ -175,6 +175,8 @@
         card.appendChild(section("Overdue", od));
       }
 
+      var tline = Hub.trainingLine(week);
+      if (tline) card.appendChild(el("p", { class: "agent-training" }, [el("a", { href: "learning.html", text: tline })]));
       card.appendChild(el("p", { class: "muted agent-honest", text: "Made from your own hub data, on this device. Nothing is sent to an AI service." }));
 
       // actions

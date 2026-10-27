@@ -110,10 +110,13 @@
         id: idOf(g), type: oneOf(g.type, ["development", "career", "placement"], "development"),
         title: str(g.title, 200), description: str(g.description), target: dateStr(g.target),
         progress: Math.round(num(g.progress, 0, 100, 0)), created: dateStr(g.created),
+        // goals sent by the programme team (imported from a goals file) keep the team's id so a later file can update them
+        setBy: oneOf(g.setBy, ["", "programme"], ""), refId: /^[A-Za-z0-9_-]{1,60}$/.test(str(g.refId, 60)) ? str(g.refId, 60) : "",
         // tasks: each has a status and a list of dated comments. With tasks, a goal's progress is the share completed.
         tasks: mapList(g.tasks, function (t) {
           return {
             id: idOf(t), text: str(t.text, 200).trim(), status: oneOf(t.status, ["notstarted", "inprogress", "completed"], "notstarted"),
+            refId: /^[A-Za-z0-9_-]{1,60}$/.test(str(t.refId, 60)) ? str(t.refId, 60) : "",
             comments: mapList(t.comments, function (c) { return { id: idOf(c), date: dateStr(c.date), text: str(c.text, 500).trim() }; }).filter(function (c) { return c.text; }).slice(0, 100)
           };
         }).filter(function (t) { return t.text; }).slice(0, 50)
