@@ -783,3 +783,17 @@ textarea.autogrow { overflow-y: hidden; min-height: 5em; }
 .set-goal .note-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0; }
 .set-goal-form { border: 1px solid var(--border); border-radius: 16px; padding: 10px 14px; margin: 8px 0; background: var(--bg); }
 .set-goal-form h4 { margin: 0 0 6px; }
+
+/* weekly reports open one week at a time */
+.week-tools { margin: 6px 0 4px; }
+.week-report h4 { margin: 0; }
+.week-toggle { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; color: var(--text); background: none; border: 0; padding: 8px 2px; min-height: 40px; cursor: pointer; }
+.week-toggle:hover .week-name { text-decoration: underline; }
+.week-name { font-weight: 700; flex: none; min-width: 4.5em; }
+.week-summary { color: var(--muted); font-weight: 400; font-size: .93rem; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.week-toggle .chev { width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); margin: 0 6px 0 0; flex: none; transition: transform .15s; }
+.week-toggle[aria-expanded="true"] .chev { transform: rotate(45deg); }
+.week-body { padding: 0 2px 8px; }
+.week-body[hidden] { display: none; }
+@media (max-width: 700px) { .week-toggle { flex-wrap: wrap; gap: 2px 10px; padding: 10px 2px; } .week-summary { flex-basis: 100%; order: 3; } .week-toggle .chev { margin-left: auto; } }
+@media print { .week-body[hidden] { display: block !important; } .week-tools, .week-toggle .chev { display: none; } }

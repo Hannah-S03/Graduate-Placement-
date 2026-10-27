@@ -321,37 +321,52 @@
       if (!shared.length) { box.appendChild(el("p", { class: "muted", text: "This graduate did not share weekly reports." })); return box; }
       box.appendChild(el("p", { class: "muted", text: "Weekly reports shared: " + shared.map(function (k) { return Hub.plural(s[k.key].length, k.one, k.many); }).join(", ") + (notShared.length ? ". Not shared: " + notShared.map(function (k) { return k.many; }).join(", ") : "") + "." }));
       function find(list, w) { return list.filter(function (x) { return x.week === w; })[0]; }
-      var last = 0;
+      var last = 0, toggles = [], serial = 0;
       shared.forEach(function (k) { s[k.key].forEach(function (x) { if (x.week > last) last = x.week; }); });
       if ((s.programme.status === "during" || s.programme.status === "after") && s.programme.week > last) last = s.programme.week;
+      // Every week is a row you click to open. Open all and Close all are above the list.
+      var tools = el("div", { class: "row week-tools" }), openAll = el("button", { type: "button", class: "btn small secondary", text: "Open all weeks" }), closeAll = el("button", { type: "button", class: "btn small secondary", text: "Close all weeks" });
+      function setAll(open) { toggles.forEach(function (t) { t.set(open); }); }
+      openAll.addEventListener("click", function () { setAll(true); }); closeAll.addEventListener("click", function () { setAll(false); });
+      tools.appendChild(openAll); tools.appendChild(closeAll); box.appendChild(tools);
       for (var w = last; w >= 1; w--) {
-        var art = el("article", { class: "week-report" }, [el("h4", { text: "Week " + w })]);
+        var art = el("article", { class: "week-report" }), body = el("div", { class: "week-body", id: "wk-" + w + "-" + (++serial) + "-" + Math.random().toString(36).slice(2, 6) }), bits = [];
         if (sh.updates) {
           var u = find(s.updates, w), row = el("p", {}, [el("strong", { text: "Progress update: " })]);
-          if (u) { row.appendChild(document.createTextNode((Hub.moodLabel(u.mood) || "No rating") + (u.note ? " \u2013 " + u.note : ""))); } else { row.appendChild(el("span", { class: "muted", text: "nothing written" })); }
-          art.appendChild(row);
+          if (u) { var mood = Hub.moodLabel(u.mood) || "No rating"; bits.push(mood); row.appendChild(document.createTextNode(mood + (u.note ? " \u2013 " + u.note : ""))); } else { row.appendChild(el("span", { class: "muted", text: "nothing written" })); }
+          body.appendChild(row);
         }
         if (sh.weeklyGoals) {
           var wg = find(s.weeklyGoals, w);
-          if (!wg) art.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), el("span", { class: "muted", text: "none set" })]));
+          if (!wg) body.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), el("span", { class: "muted", text: "none set" })]));
           else {
             var done = wg.goals.filter(function (g) { return g.done; }).length;
-            art.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), done + " of " + wg.goals.length + " done"]));
+            bits.push(done + " of " + wg.goals.length + (wg.goals.length === 1 ? " goal done" : " goals done"));
+            body.appendChild(el("p", {}, [el("strong", { text: "Weekly goals: " }), done + " of " + wg.goals.length + " done"]));
             var ul = el("ul", { class: "plain wk-goals" });
             wg.goals.forEach(function (g) { ul.appendChild(el("li", { class: g.done ? "is-done" : "" }, [el("span", { class: "visually-hidden", text: g.done ? "Done: " : "Not done: " }), el("span", { "aria-hidden": "true", text: g.done ? "\u2713 " : "\u25CB " }), g.text])); });
-            art.appendChild(ul);
+            body.appendChild(ul);
           }
         }
         if (sh.reflections) {
           var rf = find(s.reflections, w);
-          if (!rf) art.appendChild(el("p", {}, [el("strong", { text: "Reflection: " }), el("span", { class: "muted", text: "nothing written" })]));
+          if (!rf) body.appendChild(el("p", {}, [el("strong", { text: "Reflection: " }), el("span", { class: "muted", text: "nothing written" })]));
           else {
-            art.appendChild(el("p", {}, [el("strong", { text: "Reflection" })]));
+            bits.push("reflection written");
+            body.appendChild(el("p", {}, [el("strong", { text: "Reflection" })]));
             var dl = el("dl", { class: "wk-reflection" });
             [["learnt", "What I learnt"], ["wentWell", "What went well"], ["hard", "What was hard"], ["focusNext", "Focus next"]].forEach(function (f) { if (rf[f[0]]) { dl.appendChild(el("dt", { text: f[1] })); dl.appendChild(el("dd", { text: rf[f[0]] })); } });
-            art.appendChild(dl);
+            body.appendChild(dl);
           }
         }
+        var btn = el("button", { type: "button", class: "week-toggle", "aria-controls": body.id }, [el("span", { class: "week-name", text: "Week " + w }), el("span", { class: "week-summary", text: bits.length ? bits.join(" \u00B7 ") : "Nothing shared for this week" }), el("span", { class: "chev", "aria-hidden": "true" })]);
+        art.appendChild(el("h4", {}, [btn])); art.appendChild(body);
+        (function (btn, body, art) {
+          function set(open) { btn.setAttribute("aria-expanded", String(open)); body.hidden = !open; art.classList.toggle("is-open", open); }
+          btn.addEventListener("click", function () { set(body.hidden); });
+          toggles.push({ set: set });
+          set(false);
+        })(btn, body, art);
         box.appendChild(art);
       }
       return box;
