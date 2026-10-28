@@ -31,7 +31,7 @@
   Hub.mountAgent = function () {
     Hub.unmountAgent();
     var week = Hub.weekAhead();
-    var pos = readPos(), open = false, dragging = false, justDragged = false;
+    var pos = readPos(), open = false, dragging = false, justDragged = false, swallowClick = false;
     var teaseKey = "week:" + S.today();
     var isMonday = S.parseDate(S.today()).getDay() === 1;
     var teaser = isMonday && !S.state.celebrated[teaseKey];
@@ -234,6 +234,7 @@
     var drag = null;
     btn.addEventListener("pointerdown", function (e) {
       if (e.button !== undefined && e.button !== 0) return;
+      justDragged = false; swallowClick = false; // a new press starts a new interaction, so nothing left over from an earlier one can swallow it
       var r = wrap.getBoundingClientRect();
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, l: r.left, t: r.top, moved: false };
       try { btn.setPointerCapture(e.pointerId); } catch (err) { /* not supported: moves are still tracked */ }
@@ -249,14 +250,19 @@
       if (!drag || (e && e.pointerId !== drag.id)) return;
       var moved = drag.moved; drag = null; dragging = false; wrap.classList.remove("is-dragging");
       if (moved) { justDragged = true; writePos(pos); window.setTimeout(function () { justDragged = false; }, 0); }
+      // A press that did not move is a tap or click. It is acted on here, not in the click event, because after a drag some
+      // browsers send no click for the next tap (the finger lifts on the button but the press began on its label).
+      else if (e && e.type === "pointerup") { swallowClick = true; setOpen(!open, false); }
     }
     btn.addEventListener("pointerup", endDrag);
     btn.addEventListener("pointercancel", endDrag);
     btn.addEventListener("click", function (e) {
       if (justDragged) { justDragged = false; e.preventDefault(); return; }
-      setOpen(!open, false);
+      if (swallowClick) { swallowClick = false; return; } // already handled when the pointer was lifted
+      setOpen(!open, false); // keyboard (Enter, Space) and anything without pointer events
     });
     btn.addEventListener("keydown", function (e) {
+      swallowClick = false;
       if (!(e.altKey || e.shiftKey)) return;
       var d = { ArrowLeft: [-STEP, 0], ArrowRight: [STEP, 0], ArrowUp: [0, -STEP], ArrowDown: [0, STEP] }[e.key];
       if (d) { e.preventDefault(); nudge(d[0], d[1]); }
