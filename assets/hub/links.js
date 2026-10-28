@@ -18,15 +18,17 @@
 
     function card(l) {
       var c = el("article", { class: "item", "data-id": l.id });
-      var h = el("h3");
-      if (l.url) h.appendChild(Hub.link(l.url, l.name)); else h.appendChild(document.createTextNode(l.name));
-      c.appendChild(h);
+      c.appendChild(el("h3", { text: l.name }));
       var meta = el("div", { class: "item-meta" }, [el("span", { class: "tag", text: l.category })]);
-      if (!l.url) meta.appendChild(el("span", { class: "muted", text: "Link to be added" }));
+      // links built into the site (src/data/links.js) are the same for everyone and cannot be edited or deleted here
       if (l.custom) meta.appendChild(el("span", { class: "muted", text: "Added by you" }));
+      else meta.appendChild(el("span", { class: "muted" }, ["Company link", el("span", { class: "visually-hidden", text: ". Set by the programme, cannot be removed." })]));
       c.appendChild(meta);
       if (l.description) c.appendChild(el("p", { text: l.description }));
       var actions = el("div", { class: "actions" });
+      // the button that takes you to the website (a new tab); without an address yet it is greyed out and does nothing
+      if (l.url) actions.appendChild(el("a", { href: l.url, target: "_blank", rel: "noopener noreferrer", class: "btn open-btn" }, ["Open", el("span", { class: "visually-hidden", text: " " + l.name + " (opens in a new tab)" })]));
+      else actions.appendChild(el("span", { class: "btn open-btn is-disabled", "aria-disabled": "true", text: "Link to be added" }));
       var pinned = isPinned(l.id);
       var pin = el("button", { type: "button", class: "btn small" + (pinned ? "" : " secondary"), text: pinned ? "Pinned" : "Pin", "aria-pressed": pinned ? "true" : "false", "aria-label": (pinned ? "Unpin " : "Pin ") + l.name });
       pin.addEventListener("click", function () {
