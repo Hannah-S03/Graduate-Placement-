@@ -3,8 +3,9 @@
 // To add another: copy a line, give it a new unique id, and paste the web address between the quote marks.
 // Use plain web addresses, never a password. Leave url empty ("") until the address is known: the card then shows "Link to be added".
 window.SITE_LINKS = {
-  categories: ["People and HR", "IT and tools", "Learning", "Finance", "Company"],
+  categories: ["Key tools", "People and HR", "IT and tools", "Learning", "Finance", "Company"],
   items: [
+    { id: "salesforce", name: "Salesforce", category: "Key tools", description: "Sign in to Salesforce (customer and sales records).", url: "https://login.salesforce.com/?locale=eu" },
     { id: "payslips", name: "Payslips (Moorepay)", category: "People and HR", description: "Sign in to view your payslips.", url: "https://www.moorepay.co.uk/login-moorepay-system/" },
     { id: "hr-portal", name: "HR portal", category: "People and HR", description: "Payslips, holiday requests and personal details.", url: "" },
     { id: "wellbeing", name: "Wellbeing and support", category: "People and HR", description: "Support services, employee assistance and wellbeing resources.", url: "" },

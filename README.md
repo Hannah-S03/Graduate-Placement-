@@ -81,7 +81,7 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 
 ## Fixed company links
 
-The links in `src/data/links.js` are built into the site for every graduate: each shows on **Quick links** with an **Open** button, marked "Company link". Graduates can pin them but cannot edit or delete them (they can only delete links they added themselves). To add another later, copy a line in that file, give it a new unique `id`, paste the address between the quote marks and save. Use plain web addresses, never a password. Most of these are sign-in pages, so each person uses their own login; setting up single sign-on is a Vesta IT job. Note: while each graduate has their own copy of the files they could change that copy, so the links are only truly fixed once the hub is hosted at one shared address (a later step with IT).
+The links in `src/data/links.js` are built into the site for every graduate: each shows on **Quick links** with an **Open** button, marked "Company link". Graduates can pin them but cannot edit or delete them (they can only delete links they added themselves). "Key tools" is the group shown first, for the systems everyone uses most. To add another later, copy a line in that file, give it a new unique `id`, paste the address between the quote marks and save. Use plain web addresses, never a password. Most of these are sign-in pages, so each person uses their own login; setting up single sign-on is a Vesta IT job. Note: while each graduate has their own copy of the files they could change that copy, so the links are only truly fixed once the hub is hosted at one shared address (a later step with IT).
 
 ## Replacing the dummy content
 
