@@ -179,6 +179,68 @@
   };
 
   // ---------- calendar and upcoming events ----------
+  // ---------- messages and events from the programme team (imported from a programme update file) ----------
+  Hub.homePanels.messages = function (status) {
+    var list = Hub.activeAnnouncements();
+    if (!list.length) return null;
+    var unread = list.filter(function (a) { return !a.read; }).length;
+    var sec = Hub.panel("Messages from the programme team" + (unread ? " (" + unread + " new)" : ""), "messages-panel");
+    list.forEach(function (a) {
+      var card = el("article", { class: "message" + (a.read ? "" : " is-new"), "data-id": a.id });
+      card.appendChild(el("h3", {}, [a.title, a.read ? null : el("span", { class: "badge badge-warn msg-new", text: "New" })]));
+      if (a.posted) card.appendChild(el("p", { class: "muted", text: "Sent " + Hub.fmtDate(a.posted) + (a.until ? " · shown until " + Hub.fmtDate(a.until) : "") }));
+      if (a.text) card.appendChild(el("p", { class: "msg-text", text: a.text }));
+      if (!a.read) {
+        var b = el("button", { type: "button", class: "btn small secondary", text: "Mark as read", "aria-label": "Mark as read: " + a.title });
+        b.addEventListener("click", function () { a.read = true; Hub.save(status, "Marked as read."); var par = sec.parentNode; var fresh = Hub.homePanels.messages(status); if (par) { if (fresh) { Hub.collapsible(fresh, { start: "open" }); par.replaceChild(fresh, sec); } else par.removeChild(sec); } });
+        card.appendChild(b);
+      }
+      sec.appendChild(card);
+    });
+    return sec;
+  };
+
+  Hub.homePanels.programmeImport = function (status) {
+    var sec = Hub.panel("Programme team update");
+    sec.appendChild(el("p", { text: "If the programme team has sent you an update file with messages and events, choose it here. You will see what it would add or change, and nothing changes until you confirm. Events are added to your calendar; messages appear on My profile." }));
+    var fid = "update-file", input = el("input", { type: "file", id: fid, accept: ".json,application/json" }), out = el("div", { class: "goals-preview" });
+    sec.appendChild(el("div", { class: "restore" }, [el("label", { for: fid, text: "Choose a programme update file" }), input]));
+    sec.appendChild(out);
+    input.addEventListener("change", function () {
+      out.textContent = "";
+      var file = input.files && input.files[0]; if (!file) return;
+      function fail(msg) { out.appendChild(el("p", { class: "status status-error", role: "alert", text: msg })); }
+      if (file.size > 300 * 1024) return fail("That file is too large to be a programme update file.");
+      var rd = new FileReader();
+      rd.onerror = function () { fail("That file could not be read."); };
+      rd.onload = function () {
+        var parsed; try { parsed = JSON.parse(String(rd.result || "")); } catch (e) { return fail("That file is not valid. Choose an update file you were sent."); }
+        var c = Hub.cleanUpdateFile(parsed); if (c.error) return fail(c.error);
+        var plan = Hub.planUpdateImport(c.value);
+        out.appendChild(el("p", { text: "Sent " + Hub.fmtDate(c.value.generated) + ". If you import it:" }));
+        var ul = el("ul", { class: "plain" });
+        plan.annNew.forEach(function (a) { ul.appendChild(el("li", {}, [Hub.badge("New message", "ok"), " " + a.title])); });
+        plan.annUpd.forEach(function (u) { ul.appendChild(el("li", {}, [Hub.badge("Updated message", "warn"), " " + u.item.title])); });
+        plan.evNew.forEach(function (e) { ul.appendChild(el("li", {}, [Hub.badge("New event", "ok"), " " + e.title + " · " + Hub.fmtDate(e.date) + (e.time ? " " + e.time : "")])); });
+        plan.evUpd.forEach(function (u) { ul.appendChild(el("li", {}, [Hub.badge("Updated event", "warn"), " " + u.item.title + " · " + Hub.fmtDate(u.item.date)])); });
+        plan.annSame.concat(plan.evSame).forEach(function (x) { ul.appendChild(el("li", {}, [Hub.badge("No change", "info"), " " + x.title])); });
+        out.appendChild(ul);
+        if (!plan.annNew.length && !plan.annUpd.length && !plan.evNew.length && !plan.evUpd.length) { out.appendChild(el("p", { class: "muted", text: "There is nothing new in this file." })); return; }
+        var yes = el("button", { type: "button", class: "btn", text: "Import this update" }), no = el("button", { type: "button", class: "btn secondary", text: "Cancel" });
+        yes.addEventListener("click", function () {
+          Hub.applyUpdateImport(plan, c.value.generated);
+          var msgs = plan.annNew.length + plan.annUpd.length, evs = plan.evNew.length + plan.evUpd.length;
+          Hub.save(status, Hub.plural(msgs, "message", "messages") + " and " + Hub.plural(evs, "event", "events") + " imported.");
+          Hub.changed("update-import"); if (Hub.redrawProfile) Hub.redrawProfile(); else window.location.reload();
+        });
+        no.addEventListener("click", function () { out.textContent = ""; input.value = ""; input.focus(); });
+        out.appendChild(el("div", { class: "row" }, [yes, no])); yes.focus();
+      };
+      rd.readAsText(file);
+    });
+    return sec;
+  };
+
   // ---------- share a progress summary with the programme team (optional, nothing is sent automatically) ----------
   Hub.homePanels.share = function (status) {
     var sec = Hub.panel("Share with the programme team");
@@ -288,7 +350,7 @@
       var meta = el("div", { class: "item-meta" }, [Hub.badge(i.kind, i.mine ? "warn" : "info")]);
       if (i.where) meta.appendChild(el("span", { class: "muted", text: i.where }));
       var what = el("div", { class: "what" }, [title, meta]);
-      if (i.mine && i.desc) what.appendChild(el("p", { class: "muted", text: i.desc }));
+      if ((i.mine || i.programme) && i.desc) what.appendChild(el("p", { class: "muted", text: i.desc }));
       var actions = el("div", { class: "actions" });
       if (i.ics) {
         var cal = el("button", { type: "button", class: "btn small secondary", text: "Add to calendar", "aria-label": "Add " + i.title + " to your calendar" });

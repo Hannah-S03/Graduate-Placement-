@@ -75,10 +75,13 @@
   // Keys are prefixed so a name like "__proto__" can never touch an object's prototype.
   function gradKey(s) { return "g:" + s.graduate.name.toLowerCase().replace(/\s+/g, " ").trim() + "|" + s.programme.start; }
   function histEntry(s) { return { generated: s.generated, week: s.programme.week, pct: s.programme.pct, overall: s.progress.overall, overdue: s.counts.overdue }; }
-  function emptyState() { return { version: 1, grads: {} }; }
+  function emptyState() { return { version: 1, grads: {}, programme: { announcements: [], events: [] }, roster: [] }; }
   function sanitizeState(raw) {
     var out = emptyState();
     if (!isObj(raw) || !isObj(raw.grads)) return out;
+    var pr = isObj(raw.programme) ? raw.programme : {};
+    out.programme = { announcements: Hub.cleanProgAnnouncements(pr.announcements), events: Hub.cleanProgEvents(pr.events) };
+    out.roster = Array.isArray(raw.roster) ? raw.roster.map(function (x) { return str(x, 120).trim(); }).filter(Boolean).slice(0, 500) : [];
     Object.keys(raw.grads).slice(0, MAX_GRADS).forEach(function (k) {
       var r = raw.grads[k]; if (!isObj(r)) return;
       var c = cleanSummary(Object.assign({}, r.latest, { kind: Hub.SUMMARY_KIND, version: 1 }));
@@ -154,6 +157,11 @@
     return [head].concat(lines).join("\r\n") + "\r\n";
   }
 
+  function svgNode(tag, attrs, text) { var n = document.createElementNS("http://www.w3.org/2000/svg", tag); Object.keys(attrs || {}).forEach(function (k) { n.setAttribute(k, attrs[k]); }); if (text) n.textContent = text; return n; }
+  function nameKey(n) { return String(n || "").toLowerCase().replace(/\s+/g, " ").trim(); }
+  // Monday of the week that contains a date (the week runs Monday to Sunday)
+  function weekStartOf(date) { return S.mondayOf(date); }
+
   // ---------- the page ----------
   R.admin = function (t) {
     var status = Hub.status();
@@ -221,6 +229,177 @@
     ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
     drop.addEventListener("drop", function (e) { loadFiles(e.dataTransfer && e.dataTransfer.files); });
 
+    // ----- 1b. who has sent a summary this week, and the cohort overview charts -----
+    var weekSec = el("section", { class: "panel admin-week", "aria-labelledby": "admin-week-h" });
+    weekSec.appendChild(el("h2", { id: "admin-week-h", text: "This week's summaries" }));
+    var weekHost = el("div"); weekSec.appendChild(weekHost); t.appendChild(weekSec);
+    var chartSec = el("section", { class: "panel admin-charts", "aria-labelledby": "admin-charts-h" });
+    chartSec.appendChild(el("h2", { id: "admin-charts-h", text: "Cohort overview" }));
+    var chartHost = el("div"); chartSec.appendChild(chartHost); t.appendChild(chartSec);
+
+    function latestByName() {
+      var map = {};
+      rows().forEach(function (r) { var k = "n:" + nameKey(r.s.graduate.name); if (!map[k] || r.s.generated > map[k].s.generated) map[k] = r; });
+      return map;
+    }
+    function renderWeek() {
+      weekHost.textContent = "";
+      var start = weekStartOf(S.today()), end = S.addDays(start, 6);
+      weekHost.appendChild(el("p", { class: "muted", text: "Week of " + Hub.fmtDate(start) + " to " + Hub.fmtDate(end) + ". Paste the names of everyone on the programme, one per line, and this shows who has sent a summary this week." }));
+      var form = Hub.form({
+        fields: [{ name: "names", label: "Everyone on the programme (one name per line)", type: "textarea", rows: 5, maxlength: 20000, hint: "Names must be spelt as they appear on the graduates' profiles (capitals do not matter)." }],
+        values: { names: state.roster.join("\n") }, submitLabel: "Save the list",
+        onSubmit: function (v) {
+          var seen = {}; state.roster = String(v.names || "").split(/\r?\n/).map(function (x) { return x.trim().slice(0, 120); }).filter(function (x) { var k = "n:" + nameKey(x); if (k === "n:" || seen[k]) return false; seen[k] = true; return true; }).slice(0, 500);
+          var saved = save(); status.say(saved ? "The list was saved (" + Hub.plural(state.roster.length, "name", "names") + ")." : "Your browser would not save this, so it will be lost when you leave the page.", !saved); renderWeek();
+        }
+      });
+      weekHost.appendChild(form);
+      if (!state.roster.length) { weekHost.appendChild(el("p", { class: "muted", text: "No list saved yet." })); return; }
+      var by = latestByName(), sent = [], notYet = [], never = [];
+      state.roster.forEach(function (name) {
+        var r = by["n:" + nameKey(name)];
+        if (!r) never.push({ name: name }); else if (r.s.generated >= start) sent.push({ name: name, last: r.s.generated }); else notYet.push({ name: name, last: r.s.generated });
+      });
+      var listed = {}; state.roster.forEach(function (n) { listed["n:" + nameKey(n)] = true; });
+      var extra = rows().filter(function (r) { return !listed["n:" + nameKey(r.s.graduate.name)]; });
+      weekHost.appendChild(el("p", { class: "week-count", role: "status", "aria-live": "polite", text: sent.length + " of " + state.roster.length + " sent a summary this week" }));
+      var ul = el("ul", { class: "plain week-list" });
+      sent.forEach(function (x) { ul.appendChild(el("li", {}, [Hub.badge("Sent this week", "ok"), " " + x.name, el("span", { class: "muted", text: " · " + Hub.fmtDate(x.last) })])); });
+      notYet.forEach(function (x) { ul.appendChild(el("li", {}, [Hub.badge("Not yet", "warn"), " " + x.name, el("span", { class: "muted", text: " · last summary " + Hub.fmtDate(x.last) })])); });
+      never.forEach(function (x) { ul.appendChild(el("li", {}, [Hub.badge("Never sent", "danger"), " " + x.name])); });
+      extra.forEach(function (r) { ul.appendChild(el("li", {}, [Hub.badge("Not on the list", "info"), " " + r.s.graduate.name, el("span", { class: "muted", text: " · last summary " + Hub.fmtDate(r.s.generated) })])); });
+      weekHost.appendChild(ul);
+      var missing = notYet.concat(never).map(function (x) { return x.name; });
+      if (missing.length) {
+        var box = el("div"), copy = el("button", { type: "button", class: "btn secondary small", text: "Copy names to chase" });
+        copy.addEventListener("click", function () {
+          var text = "Not yet sent a summary this week (" + Hub.fmtDate(start) + " to " + Hub.fmtDate(end) + "):\n" + missing.join("\n");
+          function fallback() { box.textContent = ""; var ta = el("textarea", { readonly: "readonly", rows: "6", "aria-label": "Names to chase, ready to copy" }); ta.value = text; box.appendChild(ta); ta.focus(); ta.select(); status.say("Your browser would not copy automatically. The names are selected below: press Ctrl + C to copy them.", true); }
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { box.textContent = ""; status.say("The names to chase were copied.", false); }, fallback); else fallback();
+        });
+        weekHost.appendChild(el("div", { class: "row" }, [copy])); weekHost.appendChild(box);
+      }
+    }
+
+    function renderCharts() {
+      chartHost.textContent = "";
+      var list = rows();
+      if (!list.length) { chartHost.appendChild(el("p", { class: "muted", text: "Charts appear once you have loaded some summaries." })); return; }
+      // 1. how far along the cohort is
+      var bands = [{ label: "0 to 24%", lo: 0, hi: 24, n: 0 }, { label: "25 to 49%", lo: 25, hi: 49, n: 0 }, { label: "50 to 74%", lo: 50, hi: 74, n: 0 }, { label: "75 to 100%", lo: 75, hi: 100, n: 0 }, { label: "No data yet", n: 0 }];
+      list.forEach(function (r) { var o = r.s.progress.overall; if (o === null) bands[4].n++; else bands.forEach(function (b, i) { if (i < 4 && o >= b.lo && o <= b.hi) b.n++; }); });
+      var c1 = el("div", { class: "admin-chart" }); c1.appendChild(el("h3", { text: "How far along the cohort is (overall progress)" }));
+      var W = 560, H = 190, L = 34, B = 40, T = 14, max = Math.max(1, Math.max.apply(null, bands.map(function (b) { return b.n; })));
+      var svg = svgNode("svg", { viewBox: "0 0 " + W + " " + H, "class": "trend-svg", role: "img", "aria-label": "Number of graduates by overall progress: " + bands.map(function (b) { return b.label + ": " + b.n; }).join(", ") + ". A table with the same numbers follows." });
+      [0, max].forEach(function (v) { var y = T + (H - T - B) * (1 - v / max); svg.appendChild(svgNode("line", { x1: L, x2: W - 10, y1: y, y2: y, "class": "trend-grid" })); svg.appendChild(svgNode("text", { x: L - 6, y: y + 4, "class": "trend-label", "text-anchor": "end" }, String(v))); });
+      var bw = (W - L - 10) / bands.length;
+      bands.forEach(function (b, i) {
+        var h = (H - T - B) * (b.n / max), x = L + i * bw + bw * 0.18, w = bw * 0.64, bar = svgNode("rect", { x: x.toFixed(1), y: (H - B - h).toFixed(1), width: w.toFixed(1), height: Math.max(h, 0).toFixed(1), "class": "bar-rect" + (i === 4 ? " is-none" : "") });
+        bar.appendChild(svgNode("title", {}, b.label + ": " + Hub.plural(b.n, "graduate", "graduates")));
+        svg.appendChild(bar);
+        svg.appendChild(svgNode("text", { x: (x + w / 2).toFixed(1), y: (H - B - h - 4).toFixed(1), "class": "trend-label", "text-anchor": "middle" }, String(b.n)));
+        svg.appendChild(svgNode("text", { x: (x + w / 2).toFixed(1), y: H - 18, "class": "trend-label", "text-anchor": "middle" }, b.label));
+      });
+      c1.appendChild(svg);
+      var d1 = el("details", {}, [el("summary", { text: "Show as a table" })]), t1 = el("table", { class: "plain-table" }, [el("thead", {}, [el("tr", {}, [el("th", { scope: "col", text: "Overall progress" }), el("th", { scope: "col", text: "Graduates" })])])]), tb1 = el("tbody");
+      bands.forEach(function (b) { tb1.appendChild(el("tr", {}, [el("td", { text: b.label }), el("td", { text: String(b.n) })])); });
+      t1.appendChild(tb1); d1.appendChild(t1); c1.appendChild(d1); chartHost.appendChild(c1);
+      // 2. cohort average over time, by programme week
+      var byWeek = {};
+      list.forEach(function (r) {
+        var latestPerWeek = {};
+        r.rec.history.forEach(function (h) { if (h.week >= 1 && h.overall !== null && (!latestPerWeek[h.week] || h.generated > latestPerWeek[h.week].generated)) latestPerWeek[h.week] = h; });
+        Object.keys(latestPerWeek).forEach(function (w) { (byWeek[w] = byWeek[w] || []).push(latestPerWeek[w].overall); });
+      });
+      var weeks = Object.keys(byWeek).map(Number).sort(function (a, b) { return a - b; });
+      var c2 = el("div", { class: "admin-chart" }); c2.appendChild(el("h3", { text: "Cohort average over time (by programme week)" }));
+      if (weeks.length < 2) { c2.appendChild(el("p", { class: "muted", text: "Load summaries from more than one programme week to see the average over time." })); chartHost.appendChild(c2); return; }
+      var avg = weeks.map(function (w) { var a = byWeek[w]; return { week: w, avg: Math.round(a.reduce(function (x, y) { return x + y; }, 0) / a.length), n: a.length }; });
+      var svg2 = svgNode("svg", { viewBox: "0 0 " + W + " " + H, "class": "trend-svg", role: "img", "aria-label": "Average overall progress rose from " + avg[0].avg + "% in week " + avg[0].week + " to " + avg[avg.length - 1].avg + "% in week " + avg[avg.length - 1].week + ". A table with the same numbers follows." });
+      function yy(v) { return T + (H - T - B) * (1 - v / 100); }
+      [0, 50, 100].forEach(function (v) { svg2.appendChild(svgNode("line", { x1: L + 6, x2: W - 10, y1: yy(v), y2: yy(v), "class": "trend-grid" })); svg2.appendChild(svgNode("text", { x: L, y: yy(v) + 4, "class": "trend-label", "text-anchor": "end" }, v + "%")); });
+      var w0 = weeks[0], span = Math.max(1, weeks[weeks.length - 1] - w0);
+      function xx(w) { return L + 14 + (W - L - 28) * ((w - w0) / span); }
+      svg2.appendChild(svgNode("polyline", { points: avg.map(function (p) { return xx(p.week).toFixed(1) + "," + yy(p.avg).toFixed(1); }).join(" "), "class": "trend-line", fill: "none" }));
+      avg.forEach(function (p) { var c = svgNode("circle", { cx: xx(p.week).toFixed(1), cy: yy(p.avg).toFixed(1), r: 4.5, "class": "trend-dot" }); c.appendChild(svgNode("title", {}, "Week " + p.week + ": " + p.avg + "% (" + Hub.plural(p.n, "graduate", "graduates") + ")")); svg2.appendChild(c); svg2.appendChild(svgNode("text", { x: xx(p.week).toFixed(1), y: H - 18, "class": "trend-label", "text-anchor": "middle" }, "Wk " + p.week)); });
+      c2.appendChild(svg2);
+      var d2 = el("details", {}, [el("summary", { text: "Show as a table" })]), t2 = el("table", { class: "plain-table" }, [el("thead", {}, [el("tr", {}, [el("th", { scope: "col", text: "Programme week" }), el("th", { scope: "col", text: "Average overall progress" }), el("th", { scope: "col", text: "Graduates" })])])]), tb2 = el("tbody");
+      avg.forEach(function (p) { tb2.appendChild(el("tr", {}, [el("td", { text: String(p.week) }), el("td", { text: p.avg + "%" }), el("td", { text: String(p.n) })])); });
+      t2.appendChild(tb2); d2.appendChild(t2); c2.appendChild(d2); chartHost.appendChild(c2);
+    }
+
+    // ----- 2b. announcements and events for the whole cohort (they reach graduates when they import the update file) -----
+    var progSec = el("section", { class: "panel admin-prog", "aria-labelledby": "admin-prog-h" });
+    progSec.appendChild(el("h2", { id: "admin-prog-h", text: "Announcements and events" }));
+    progSec.appendChild(el("p", { text: "Write messages and programme events for every graduate, then download one update file and send it to the cohort. It holds no personal data. Graduates see these only when they import the file on My profile. Messages and events you remove here are not removed from hubs that already imported them." }));
+    var progHost = el("div");
+    progSec.appendChild(progHost);
+    function renderProgramme() {
+      progHost.textContent = "";
+      var P = state.programme, mode = null, editing = null;
+      var listHost = el("div"), formHost = el("div"), fileHost = el("div");
+      progHost.appendChild(listHost); progHost.appendChild(formHost); progHost.appendChild(fileHost);
+      function draw() {
+        listHost.textContent = ""; formHost.textContent = ""; fileHost.textContent = "";
+        listHost.appendChild(el("h3", { text: "Announcements" }));
+        if (!P.announcements.length) listHost.appendChild(el("p", { class: "muted", text: "No announcements yet." }));
+        var ul = el("ul", { class: "plain" });
+        P.announcements.forEach(function (a) {
+          var li = el("li", { class: "set-goal" });
+          li.appendChild(el("strong", { text: a.title })); if (a.until) li.appendChild(el("span", { class: "muted", text: " · shown until " + Hub.fmtDate(a.until) }));
+          if (a.text) li.appendChild(el("div", { class: "note-text", text: a.text }));
+          var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit announcement " + a.title }); ed.addEventListener("click", function () { mode = "ann"; editing = a.id; draw(); var f = formHost.querySelector("input"); if (f) f.focus(); });
+          var del = Hub.confirmButton({ label: "Remove", ariaLabel: "Remove announcement " + a.title, message: "Remove this announcement?", confirmLabel: "Yes, remove", onConfirm: function () { P.announcements = P.announcements.filter(function (x) { return x.id !== a.id; }); save(); status.say("Announcement removed.", false); draw(); } });
+          li.appendChild(el("div", { class: "row" }, [ed, del])); ul.appendChild(li);
+        });
+        listHost.appendChild(ul);
+        listHost.appendChild(el("h3", { text: "Events" }));
+        if (!P.events.length) listHost.appendChild(el("p", { class: "muted", text: "No events yet." }));
+        var ul2 = el("ul", { class: "plain" });
+        P.events.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.time || "") < (b.time || "") ? -1 : 1; }).forEach(function (e) {
+          var li = el("li", { class: "set-goal" });
+          li.appendChild(el("strong", { text: e.title })); li.appendChild(el("span", { class: "muted", text: " · " + Hub.fmtDate(e.date) + (e.time ? " " + e.time : "") + (e.where ? " · " + e.where : "") }));
+          if (e.note) li.appendChild(el("div", { class: "note-text", text: e.note }));
+          var ed = el("button", { type: "button", class: "btn small secondary", text: "Edit", "aria-label": "Edit event " + e.title }); ed.addEventListener("click", function () { mode = "ev"; editing = e.id; draw(); var f = formHost.querySelector("input"); if (f) f.focus(); });
+          var del = Hub.confirmButton({ label: "Remove", ariaLabel: "Remove event " + e.title, message: "Remove this event?", confirmLabel: "Yes, remove", onConfirm: function () { P.events = P.events.filter(function (x) { return x.id !== e.id; }); save(); status.say("Event removed.", false); draw(); } });
+          li.appendChild(el("div", { class: "row" }, [ed, del])); ul2.appendChild(li);
+        });
+        listHost.appendChild(ul2);
+        if (mode) {
+          var isAnn = mode === "ann", cur = editing ? (isAnn ? P.announcements : P.events).filter(function (x) { return x.id === editing; })[0] : null;
+          var panel = el("div", { class: "set-goal-form" }); panel.appendChild(el("h4", { text: (cur ? "Edit " : "Add ") + (isAnn ? "an announcement" : "an event") }));
+          panel.appendChild(Hub.form({
+            fields: isAnn ? [{ name: "title", label: "Title", required: true, maxlength: 200 }, { name: "text", label: "Message", type: "textarea", rows: 4, maxlength: 1000 }, { name: "until", label: "Show until (optional)", type: "date" }]
+              : [{ name: "title", label: "Event", required: true, maxlength: 200 }, { name: "date", label: "Date", type: "date", required: true }, { name: "time", label: "Time (optional)", type: "time" }, { name: "where", label: "Place (optional)", maxlength: 200 }, { name: "note", label: "Note (optional)", type: "textarea", rows: 3, maxlength: 1000 }],
+            values: cur || {}, submitLabel: cur ? "Save" : (isAnn ? "Add announcement" : "Add event"), onCancel: function () { mode = null; editing = null; draw(); },
+            onSubmit: function (v) {
+              if (cur) Object.keys(v).forEach(function (k) { cur[k] = v[k]; });
+              else if (isAnn) P.announcements.push({ id: "pa-" + uid(), title: v.title, text: v.text, posted: S.today(), until: v.until });
+              else P.events.push({ id: "pe-" + uid(), title: v.title, date: v.date, time: v.time, where: v.where, note: v.note });
+              if (isAnn && cur) cur.posted = cur.posted || S.today();
+              var saved = save(); mode = null; editing = null; status.say(saved ? "Saved." : "Your browser would not save this, so it will be lost when you leave the page.", !saved); draw();
+            }
+          }));
+          formHost.appendChild(panel);
+        } else {
+          var a1 = el("button", { type: "button", class: "btn small", text: "Add an announcement" }), a2 = el("button", { type: "button", class: "btn small", text: "Add an event" });
+          a1.addEventListener("click", function () { mode = "ann"; editing = null; draw(); var f = formHost.querySelector("input"); if (f) f.focus(); });
+          a2.addEventListener("click", function () { mode = "ev"; editing = null; draw(); var f = formHost.querySelector("input"); if (f) f.focus(); });
+          formHost.appendChild(el("div", { class: "row" }, [a1, a2]));
+        }
+        var dl = el("button", { type: "button", class: "btn secondary", text: "Download programme update file" });
+        if (!P.announcements.length && !P.events.length) dl.disabled = true;
+        dl.addEventListener("click", function () {
+          var file = { kind: Hub.UPDATE_KIND, version: 1, generated: S.today(), announcements: P.announcements, events: P.events };
+          Hub.download("graduate-hub-update-" + S.today() + ".json", JSON.stringify(file, null, 2), "application/json");
+          status.say("The update file was downloaded. Send it to the cohort: graduates see it when they import it on My profile.", false);
+        });
+        fileHost.appendChild(el("div", { class: "row" }, [dl]));
+      }
+      draw();
+    }
+
     // ----- 2. cohort table -----
     var cohortSec = el("section", { class: "panel admin-cohort", "aria-labelledby": "admin-cohort-h" });
     cohortSec.appendChild(el("h2", { id: "admin-cohort-h", text: "Cohort" }));
@@ -230,6 +409,7 @@
 
     var detailHost = el("div", { class: "admin-detail", id: "admin-detail" });
     t.appendChild(detailHost);
+    t.appendChild(progSec);
 
     function renderCohort() {
       cohortHost.textContent = "";
@@ -588,7 +768,7 @@
     } })]));
     t.appendChild(dataSec);
 
-    function renderAll() { renderCohort(); renderDetail(false); }
+    function renderAll() { renderWeek(); renderCharts(); renderCohort(); renderDetail(false); renderProgramme(); }
     renderAll();
   };
 })();

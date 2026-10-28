@@ -130,6 +130,7 @@
     function renderBrowse() {
       browseHost.textContent = "";
       browseHost.appendChild(el("h2", { text: "Courses and development opportunities" }));
+      if (!LRN.catalogue.length) { browseHost.appendChild(el("p", { text: "Courses and development opportunities will be added here." })); return; }
       var ft = Hub.field({ name: "t", label: "Type", type: "select", required: true, options: [{ value: "all", label: "All types" }].concat((LRN.types || []).map(function (x) { return { value: x, label: x }; })) }, ui.type);
       var fs = Hub.field({ name: "k", label: "Skill", type: "select", required: true, options: [{ value: "all", label: "All skills" }].concat(Hub.skills().map(function (s) { return { value: s.id, label: s.name }; })) }, ui.skill);
       ft.input.addEventListener("change", function () { ui.type = ft.input.value; renderBrowse(); ft.input.focus(); });

@@ -95,7 +95,7 @@
       links: { pinned: [], custom: [] },
       learning: { saved: {}, custom: [], training: {} },
       contacts: [], reflections: {}, achievements: [],
-      weeklyGoals: {}, calendar: [], updates: {}, celebrated: {}, meetings: [], feedback: []
+      weeklyGoals: {}, calendar: [], updates: {}, celebrated: {}, meetings: [], feedback: [], announcements: []
     };
   }
 
@@ -169,7 +169,9 @@
     });
     s.calendar = mapList(raw.calendar, function (c) {
       var time = typeof c.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(c.time) ? c.time : "";
-      return { id: idOf(c), title: str(c.title, 200).trim(), date: dateStr(c.date), time: time, where: str(c.where, 200), note: str(c.note, 1000) };
+      return { id: idOf(c), title: str(c.title, 200).trim(), date: dateStr(c.date), time: time, where: str(c.where, 200), note: str(c.note, 1000),
+        // events sent by the programme team (imported from a programme update file) keep the team's id so a later file can update them
+        setBy: oneOf(c.setBy, ["", "programme"], ""), refId: /^[A-Za-z0-9_-]{1,60}$/.test(str(c.refId, 60)) ? str(c.refId, 60) : "" };
     }).filter(function (c) { return c.title && c.date; }).slice(0, 500);
     if (isObj(raw.updates)) Object.keys(raw.updates).forEach(function (k) {
       var n = parseInt(k, 10), v = raw.updates[k];
@@ -188,6 +190,10 @@
     s.feedback = mapList(raw.feedback, function (f) {
       return { id: idOf(f), date: dateStr(f.date), from: str(f.from, 120), kind: oneOf(f.kind, ["positive", "develop"], "positive"), text: str(f.text, 3000).trim(), action: str(f.action, 1000), goalId: str(f.goalId, 60) };
     }).filter(function (f) { return f.text; }).slice(0, 500);
+    // messages from the programme team (imported from a programme update file)
+    s.announcements = mapList(raw.announcements, function (a) {
+      return { id: idOf(a), refId: /^[A-Za-z0-9_-]{1,60}$/.test(str(a.refId, 60)) ? str(a.refId, 60) : "", title: str(a.title, 200).trim(), text: str(a.text, 1000).trim(), posted: dateStr(a.posted), until: dateStr(a.until), read: a.read === true };
+    }).filter(function (a) { return a.title; }).slice(0, 200);
     // celebrations already shown (so each one appears once): { "goal:<id>": true, "half": true, ... }
     if (isObj(raw.celebrated)) Object.keys(raw.celebrated).slice(0, 1000).forEach(function (k) { if (raw.celebrated[k] === true && str(k, 80)) s.celebrated[str(k, 80)] = true; });
     return s;

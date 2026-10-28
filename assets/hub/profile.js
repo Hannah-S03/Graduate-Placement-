@@ -302,6 +302,8 @@
       edit.addEventListener("click", function () { editing = true; render(); });
       card.appendChild(edit);
       body.appendChild(card);
+      var msgs = Hub.homePanels.messages(status);
+      if (msgs) { Hub.collapsible(msgs, { start: "open" }); body.appendChild(msgs); }
       var grid = el("div", { class: "home-grid" });
       function add(sec, start, cls, opts) { opts = opts || {}; opts.start = start; Hub.collapsible(sec, opts); if (cls) sec.classList.add(cls); grid.appendChild(sec); }
       add(Hub.homePanels.weekly(status), "open");
@@ -313,6 +315,9 @@
       add(goalsPanel(), "closed-on-phone");
       add(achievementsPanel(), "closed-on-phone");
       body.appendChild(grid);
+      var upd = Hub.homePanels.programmeImport(status);
+      Hub.collapsible(upd, { start: "closed" });
+      body.appendChild(upd);
       var share = Hub.homePanels.share(status);
       Hub.collapsible(share, { start: "closed" });
       body.appendChild(share);
@@ -340,6 +345,7 @@
     function newDay() { if (S.today() !== drawnOn && !editing && S.state.profile.name) { drawnOn = S.today(); render(); } }
     document.addEventListener("visibilitychange", function () { if (!document.hidden) newDay(); });
     window.addEventListener("focus", newDay);
+    Hub.redrawProfile = function () { drawnOn = S.today(); render(); };
     render();
   };
 })();

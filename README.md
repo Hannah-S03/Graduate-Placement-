@@ -42,6 +42,8 @@ On **My profile** a round navy button labelled **AI agent** sits at the bottom r
 
 **Setting goals for a graduate:** in a graduate's detail, **Goals set by the programme team** lets you add, edit and remove goals (tasks one per line; tick "Also add this goal for every other graduate" for cohort goals) and **Download goals file for <name>**. Send the file to the graduate; on **My journey** they open **Goals from the programme team**, choose it, check the preview and confirm. New goals get a "Set by the programme team" badge, later changes to the same goal update it, and the graduate's own task progress, comments and extra tasks are never overwritten. Goals you remove are not removed from their hub.
 
+**Announcements and events:** in the Programme team view, **Announcements and events** lets you write messages and programme events for the whole cohort and **Download programme update file**. Send the file to the cohort; on My profile they open **Programme team update**, choose it, check the preview and confirm. Messages appear in **Messages from the programme team**, events appear in their calendar marked as programme events, and sending a newer file with the same items updates them. **This week's summaries:** paste everyone's names (one per line) to see who has sent a summary this week and who to chase. **Cohort overview** shows how far along the cohort is and the average progress by programme week.
+
 Limits: it is manual (as fresh as the last file sent), the page has no login (it holds nothing until files are loaded, and everything stays in that browser, so use a Vesta-managed device), and the head's notes never reach graduates. Use dummy data until the privacy notice has been agreed. A live version (automatic reporting, sign-in, roles, an audit log) needs a server and Vesta IT, HR and data-protection agreement first.
 
 ## Where is the information saved?
@@ -90,7 +92,7 @@ The links in `src/data/links.js` are built into the site for every graduate: eac
 2. **Key information buttons** (`src/data/resources.js`): paste the folder address into each `url` (plain web addresses, never a password). Until you do, the button shows "Link to be added". Copy, rename or delete cards freely.
 3. **Key contacts** (`src/data/team.js`): fill in `name`, `email` and `phone` for each role card; blank ones show "Contact details to be added".
 4. **Contact email** (`src/config.js`): set `contactEmail` (and optionally `programmeTeamEmail`). The Help page shows "Contact details will be added here" until it is set.
-5. **Quick links** (`src/data/links.js`) and **training** (`src/data/learning.js`: required training and `dueDays`): add real web addresses and items.
+5. **Quick links** (`src/data/links.js`) and **training** (`src/data/learning.js`: required training and `dueDays`): add real web addresses and items. The **learning catalogue** in the same file is empty: add courses and opportunities one per line (there is an example in the file).
 6. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 7. `usingDummyData` in `src/config.js` is `false`, so there is no sample-content banner. Set it to `true` only if you want the yellow banner back.
 

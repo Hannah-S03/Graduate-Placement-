@@ -494,7 +494,7 @@
       if (m.next && inRange(m.next)) items.push({ id: "mt-" + m.id, kind: "1:1 meeting", title: "1:1" + (m.withWho ? " with " + m.withWho : ""), date: m.next, time: "", href: "meetings.html", ics: true, desc: m.title || "" });
     });
     st.calendar.forEach(function (c) {
-      if (inRange(c.date)) items.push({ id: c.id, kind: "My event", title: c.title, date: c.date, time: c.time, where: c.where, desc: c.note, ics: true, mine: true });
+      if (inRange(c.date)) items.push({ id: c.id, kind: c.setBy === "programme" ? "Programme event" : "My event", title: c.title, date: c.date, time: c.time, where: c.where, desc: c.note, ics: true, mine: c.setBy !== "programme", programme: c.setBy === "programme" });
     });
     Hub.training().forEach(function (t) {
       if (Hub.trainingStatus(t) === "complete") return;
@@ -737,6 +737,67 @@
         else { g.tasks = g.tasks || []; g.tasks.push({ id: S.id(), text: t.text, status: "notstarted", comments: [], refId: t.id }); }
       });
     });
+  };
+
+  // ----- programme updates: announcements and events from the programme team (a file the head sends; the graduate chooses to import it) -----
+  Hub.UPDATE_KIND = "graduate-hub-update";
+  Hub.cleanProgAnnouncements = function (list) {
+    var seen = {}, out = [];
+    (Array.isArray(list) ? list.slice(0, 100) : []).forEach(function (a) {
+      if (!isPlain(a) || !REF_RE.test(cut(a.id, 60)) || seen["a:" + a.id]) return;
+      var title = cut(a.title, 200).trim(); if (!title) return;
+      seen["a:" + a.id] = true;
+      out.push({ id: a.id, title: title, text: cut(a.text, 1000).trim(), posted: S.dateStr(a.posted), until: S.dateStr(a.until) });
+    });
+    return out;
+  };
+  Hub.cleanProgEvents = function (list) {
+    var seen = {}, out = [];
+    (Array.isArray(list) ? list.slice(0, 200) : []).forEach(function (e) {
+      if (!isPlain(e) || !REF_RE.test(cut(e.id, 60)) || seen["e:" + e.id]) return;
+      var title = cut(e.title, 200).trim(), date = S.dateStr(e.date); if (!title || !date) return;
+      seen["e:" + e.id] = true;
+      out.push({ id: e.id, title: title, date: date, time: typeof e.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(e.time) ? e.time : "", where: cut(e.where, 200).trim(), note: cut(e.note, 1000).trim() });
+    });
+    return out;
+  };
+  // Checks a programme update file. Returns { error } or { value: { generated, announcements, events } }.
+  Hub.cleanUpdateFile = function (raw) {
+    if (!isPlain(raw)) return { error: "This is not a programme update file." };
+    if (raw.kind !== Hub.UPDATE_KIND) return { error: "This is not a Graduate Hub programme update file." };
+    if (raw.version !== 1) return { error: "This file was made by a different version of the hub, so it cannot be read." };
+    var generated = S.dateStr(raw.generated); if (!generated) return { error: "The file has no valid date." };
+    var ann = Hub.cleanProgAnnouncements(raw.announcements), ev = Hub.cleanProgEvents(raw.events);
+    if (!ann.length && !ev.length) return { error: "The file has no announcements or events in it." };
+    return { value: { generated: generated, announcements: ann, events: ev } };
+  };
+  // Works out what importing would do, without changing anything.
+  Hub.planUpdateImport = function (value) {
+    var plan = { annNew: [], annUpd: [], annSame: [], evNew: [], evUpd: [], evSame: [] };
+    value.announcements.forEach(function (pa) {
+      var mine = S.state.announcements.filter(function (a) { return a.refId === pa.id; })[0];
+      if (!mine) plan.annNew.push(pa);
+      else if (mine.title !== pa.title || mine.text !== pa.text || (mine.until || "") !== pa.until) plan.annUpd.push({ item: pa, mine: mine });
+      else plan.annSame.push(pa);
+    });
+    value.events.forEach(function (pe) {
+      var mine = S.state.calendar.filter(function (c) { return c.setBy === "programme" && c.refId === pe.id; })[0];
+      if (!mine) plan.evNew.push(pe);
+      else if (mine.title !== pe.title || mine.date !== pe.date || (mine.time || "") !== pe.time || (mine.where || "") !== pe.where || (mine.note || "") !== pe.note) plan.evUpd.push({ item: pe, mine: mine });
+      else plan.evSame.push(pe);
+    });
+    return plan;
+  };
+  Hub.applyUpdateImport = function (plan, generated) {
+    plan.annNew.forEach(function (pa) { S.state.announcements.push({ id: S.id(), refId: pa.id, title: pa.title, text: pa.text, posted: pa.posted || generated || S.today(), until: pa.until, read: false }); });
+    plan.annUpd.forEach(function (u) { u.mine.title = u.item.title; u.mine.text = u.item.text; u.mine.until = u.item.until; u.mine.read = false; });
+    plan.evNew.forEach(function (pe) { S.state.calendar.push({ id: S.id(), title: pe.title, date: pe.date, time: pe.time, where: pe.where, note: pe.note, setBy: "programme", refId: pe.id }); });
+    plan.evUpd.forEach(function (u) { var c = u.mine; c.title = u.item.title; c.date = u.item.date; c.time = u.item.time; c.where = u.item.where; c.note = u.item.note; });
+  };
+  // Announcements that are still showing (not past their "show until" date), newest first.
+  Hub.activeAnnouncements = function () {
+    var today = S.today();
+    return S.state.announcements.filter(function (a) { return !a.until || a.until >= today; }).sort(function (a, b) { return (b.posted || "") < (a.posted || "") ? -1 : (b.posted || "") > (a.posted || "") ? 1 : 0; });
   };
 
   // ----- calendar files (.ics) -----

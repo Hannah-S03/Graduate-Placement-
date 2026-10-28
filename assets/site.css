@@ -820,3 +820,20 @@ h2.link-cat .link-count { font-size: .93rem; font-weight: 400; color: var(--mute
 /* Company hub: key information cards and blank key contacts */
 .card.is-blank { border-style: dashed; }
 .grid > .card.link-card { gap: 8px; }
+
+/* messages from the programme team */
+.message { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.message:last-child { border-bottom: 0; }
+.message h3 { margin: 0 0 2px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.message.is-new { border-left: 4px solid var(--accent); padding-left: 12px; }
+.msg-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0 8px; }
+
+/* this week's summaries and the cohort charts */
+.week-count { font-weight: 700; margin: 10px 0 4px; }
+.week-list li { padding: 3px 0; overflow-wrap: anywhere; }
+.admin-chart { margin: 8px 0 14px; }
+.admin-chart h3 { font-family: inherit; font-size: .86rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 4px; }
+.bar-rect { fill: var(--viz-now); }
+.bar-rect.is-none { fill: none; stroke: var(--viz-now); stroke-width: 2; stroke-dasharray: 5 4; }
+@media print { .admin-week form, .admin-week .row { display: none; } }
+@media (max-width: 700px) { .admin-chart summary, .admin-trend summary { display: flex; align-items: center; min-height: 36px; cursor: pointer; } }
