@@ -816,3 +816,7 @@ h2.link-cat .link-count { font-size: .93rem; font-weight: 400; color: var(--mute
 @media (max-width: 700px) { .btn.open-btn { min-height: 56px; } .link-card .btn.small { min-height: 40px; } }
 @media screen { [data-theme="dark"] .link-badge { border-color: #8fb0c8; color: #d3e0ea; } [data-theme="dark"] .btn.open-btn:focus-visible { outline-color: #fff; } [data-theme="dark"] .link-badge::before { box-shadow: 0 0 0 1px #8fb0c8; } }
 @media print { .btn.open-btn { background: #fff; color: #000; border: 1px solid #000; } }
+
+/* Company hub: key information cards and blank key contacts */
+.card.is-blank { border-style: dashed; }
+.grid > .card.link-card { gap: 8px; }

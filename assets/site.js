@@ -2,7 +2,6 @@
   "use strict";
   var CFG = window.SITE_CONFIG || {};
   var COMPANY = window.SITE_COMPANY || {};
-  var FEEDBACK = window.SITE_FEEDBACK || { quotes: [], results: [] };
   var CONTENT = window.SITE_CONTENT || {};
   var OVERVIEW = window.SITE_OVERVIEW || { groups: [] };
 
@@ -130,28 +129,62 @@
 
   // About the company (mission, values, culture, size).
   R.aboutCompany = function (t) {
-    t.appendChild(el("p", { class: "lead", text: COMPANY.tagline || "" }));
-    t.appendChild(el("p", { text: COMPANY.about || "" }));
-    var g = el("div", { class: "grid" });
-    [["Mission", COMPANY.mission], ["Size and locations", COMPANY.size], ["Culture", COMPANY.culture], ["Why join us", COMPANY.whyJoin]].forEach(function (c) {
-      g.appendChild(el("div", { class: "card" }, [el("h3", { text: c[0] }), el("p", { text: c[1] || "" })]));
-    });
-    t.appendChild(g);
-    t.appendChild(el("h3", { text: "Our values" }));
-    var v = el("p");
-    (COMPANY.values || []).forEach(function (x) { v.appendChild(el("span", { class: "tag", text: x })); });
-    t.appendChild(v);
+    t.appendChild(el("p", { class: "lead", text: COMPANY.name || "" }));
+    if (COMPANY.tagline) t.appendChild(el("p", { text: COMPANY.tagline }));
+    if (COMPANY.about) t.appendChild(el("p", { text: COMPANY.about }));
+    var n = Number(COMPANY.portfolios) || 0;
+    if (n > 0) {
+      t.appendChild(el("p", { text: (COMPANY.name || "The company") + " works across " + n + (n === 1 ? " portfolio." : " portfolios.") }));
+      t.appendChild(el("ul", { class: "tiles" }, [el("li", {}, [el("span", { class: "muted", text: "Portfolios" }), el("strong", { text: String(n) })])]));
+    }
+    var names = (COMPANY.portfolioNames || []).map(function (x) { return typeof x === "string" ? { name: x } : x; }).filter(function (x) { return x && x.name; });
+    if (names.length) {
+      var pg = el("div", { class: "grid" });
+      names.forEach(function (x) { pg.appendChild(el("article", { class: "card" }, [el("h3", { text: x.name }), x.text ? el("p", { text: x.text }) : null])); });
+      t.appendChild(pg);
+    }
+    var facts = [["Mission", COMPANY.mission], ["Size and locations", COMPANY.size], ["Culture", COMPANY.culture], ["Why join us", COMPANY.whyJoin]].filter(function (c) { return c[1]; });
+    if (facts.length) {
+      var g = el("div", { class: "grid" });
+      facts.forEach(function (c) { g.appendChild(el("div", { class: "card" }, [el("h3", { text: c[0] }), el("p", { text: c[1] })])); });
+      t.appendChild(g);
+    }
+    if ((COMPANY.values || []).length) {
+      t.appendChild(el("h3", { text: "Our values" }));
+      var v = el("p");
+      COMPANY.values.forEach(function (x) { v.appendChild(el("span", { class: "tag", text: x })); });
+      t.appendChild(v);
+    }
+    if (!COMPANY.tagline && !COMPANY.about && !facts.length && !(COMPANY.values || []).length) t.appendChild(el("p", { class: "muted", text: "More company information will be added here." }));
   };
 
-  R.centralTeam = function (t) {
-    var ct = COMPANY.centralTeam;
-    if (!ct) return;
-    t.appendChild(el("p", { text: ct.intro || "" }));
-    var ag = el("div", { class: "grid" });
-    (ct.areas || []).forEach(function (a) {
-      ag.appendChild(el("article", { class: "card" }, [el("h3", { text: a.name }), el("p", { text: a.text })]));
+  // A web address is only used if it is a plain http or https address.
+  function safeHref(u) {
+    if (typeof u !== "string" || !u.trim() || /\s/.test(u.trim())) return "";
+    try { var x = new URL(u.trim()); return x.protocol === "http:" || x.protocol === "https:" ? x.href : ""; } catch (e) { return ""; }
+  }
+  // The big "Open" button that goes to a website in a new tab. With no address yet it is greyed out and does nothing.
+  function openButton(url, name) {
+    var href = safeHref(url);
+    if (!href) return el("span", { class: "btn open-btn is-disabled", "aria-disabled": "true", text: "Link to be added" });
+    var icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("width", "20"); icon.setAttribute("height", "20"); icon.setAttribute("aria-hidden", "true"); icon.setAttribute("focusable", "false"); icon.setAttribute("class", "open-icon");
+    var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"); path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor"); path.setAttribute("stroke-width", "2"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
+    icon.appendChild(path);
+    return el("a", { href: href, target: "_blank", rel: "noopener noreferrer", class: "btn open-btn" }, [el("span", { text: "Open" }), icon, el("span", { class: "visually-hidden", text: " " + name + " (opens in a new tab)" })]);
+  }
+
+  // Key information: cards with a button to a folder of material. The folder addresses are in src/data/resources.js.
+  R.keyResources = function (t) {
+    var RES = window.SITE_RESOURCES || { items: [] };
+    if (RES.intro) t.appendChild(el("p", { text: RES.intro }));
+    var g = el("div", { class: "grid" });
+    (RES.items || []).forEach(function (x) {
+      if (!x || !x.title) return;
+      g.appendChild(el("article", { class: "card link-card", "data-id": x.id || false }, [el("h3", { text: x.title }), x.description ? el("p", { text: x.description }) : null, openButton(x.url, x.title)]));
     });
-    t.appendChild(ag);
+    t.appendChild(g);
   };
 
   R.objectives = function (t) {
@@ -187,27 +220,6 @@
     if (OVERVIEW.note) t.appendChild(el("p", { class: "note", text: OVERVIEW.note }));
   };
 
-  R.feedback = function (t) {
-    var q = FEEDBACK.quotes || [];
-    if (!q.length) {
-      t.appendChild(el("p", { text: "Feedback from previous graduates will appear here once we have our first cohort." }));
-      return;
-    }
-    var wrap = el("div", { class: "quotes" });
-    q.forEach(function (x) {
-      wrap.appendChild(el("blockquote", {}, [
-        el("p", { text: "“" + x.quote + "”" }),
-        el("footer", { text: x.name + ", " + x.cohort + ", " + x.team })
-      ]));
-    });
-    t.appendChild(wrap);
-    if ((FEEDBACK.results || []).length) {
-      var ul = el("ul", { class: "facts" });
-      FEEDBACK.results.forEach(function (r) { ul.appendChild(el("li", {}, [el("strong", { text: r.value }), el("span", { text: r.label })])); });
-      t.appendChild(ul);
-    }
-  };
-
   R.faqs = function (t) {
     t.classList.add("faq");
     (CONTENT.faqs || []).forEach(function (f) {
@@ -216,12 +228,13 @@
   };
 
   R.contact = function (t) {
+    if (!CFG.contactEmail) { t.appendChild(el("p", { class: "muted", text: "Contact details will be added here." })); return; }
     t.appendChild(el("p", {}, ["Email: ", el("a", { href: "mailto:" + CFG.contactEmail, text: CFG.contactEmail })]));
     t.appendChild(el("p", { text: "We aim to reply within 2 working days." }));
   };
 
   // Shared with the hub scripts (assets/hub/*.js), which add their own renderers before the page is built.
-  window.SiteUtil = { el: el, initials: initials };
+  window.SiteUtil = { el: el, initials: initials, openButton: openButton, safeHref: safeHref };
   window.SiteRenderers = R;
 
   // Every page except My profile (which has its own greeting card) gets its title and summary in a navy banner.

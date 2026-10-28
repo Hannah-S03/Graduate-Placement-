@@ -1,4 +1,4 @@
-// DUMMY DATA: required training and a catalogue of courses and development opportunities.
+// Required training and a catalogue of courses and development opportunities (draft: check before launch).
 // "dueDays" = the training is due that many days after the graduate's placement start date.
 // "skill" matches a skill from src/data/overview.js (its name in lower case with dashes).
 window.SITE_LEARNING = {

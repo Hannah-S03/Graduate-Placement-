@@ -26,14 +26,7 @@
       c.appendChild(meta);
       if (l.description) c.appendChild(el("p", { text: l.description }));
       // the big button that takes you to the website (a new tab); without an address yet it is greyed out and does nothing
-      if (l.url) {
-        var icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        icon.setAttribute("viewBox", "0 0 24 24"); icon.setAttribute("width", "20"); icon.setAttribute("height", "20"); icon.setAttribute("aria-hidden", "true"); icon.setAttribute("focusable", "false"); icon.setAttribute("class", "open-icon");
-        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", "M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"); path.setAttribute("fill", "none"); path.setAttribute("stroke", "currentColor"); path.setAttribute("stroke-width", "2"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("stroke-linejoin", "round");
-        icon.appendChild(path);
-        c.appendChild(el("a", { href: l.url, target: "_blank", rel: "noopener noreferrer", class: "btn open-btn" }, [el("span", { text: "Open" }), icon, el("span", { class: "visually-hidden", text: " " + l.name + " (opens in a new tab)" })]));
-      } else c.appendChild(el("span", { class: "btn open-btn is-disabled", "aria-disabled": "true", text: "Link to be added" }));
+      c.appendChild(window.SiteUtil.openButton(l.url, l.name));
       var actions = el("div", { class: "actions link-actions" });
       var pinned = isPinned(l.id);
       var pin = el("button", { type: "button", class: "btn small" + (pinned ? "" : " secondary"), text: pinned ? "Pinned" : "Pin to My profile", "aria-pressed": pinned ? "true" : "false", "aria-label": pinned ? "Pinned: " + l.name + ". Press to unpin" : "Pin " + l.name + " to My profile" });

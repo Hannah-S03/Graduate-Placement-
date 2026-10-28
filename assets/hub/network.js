@@ -1,4 +1,4 @@
-// Company hub: placement details, key contacts plus your own network, and networks and groups.
+// Company hub: placement details, and key contacts plus your own network.
 (function () {
   "use strict";
   var Hub = window.Hub, el = Hub.el, S = Hub.store, R = window.SiteRenderers;
@@ -28,16 +28,6 @@
     t.appendChild(g);
   };
 
-  R.groups = function (t) {
-    var N = window.SITE_NETWORKS || { internal: [], external: [] };
-    [["Inside the company", N.internal], ["Outside the company", N.external]].forEach(function (grp) {
-      t.appendChild(el("h3", { text: grp[0] }));
-      var g = el("div", { class: "grid" });
-      grp[1].forEach(function (n) { g.appendChild(el("article", { class: "card" }, [el("h4", { text: n.name }), el("p", { text: n.text })])); });
-      t.appendChild(g);
-    });
-  };
-
   R.network = function (t) {
     var status = Hub.status();
     var keyHost = el("div"), mineHost = el("div");
@@ -51,13 +41,17 @@
       keyHost.appendChild(el("p", { text: "The people to go to, and what to ask them about." }));
       var g = el("div", { class: "grid" });
       (window.SITE_TEAM || []).forEach(function (p) {
-        g.appendChild(el("article", { class: "card" }, [
-          el("div", { class: "avatar", "aria-hidden": "true", text: window.SiteUtil.initials(p.name) }),
-          el("h4", { text: p.name }),
-          el("p", { class: "tag", text: p.role }),
-          el("p", { text: p.bio }),
-          el("p", {}, [el("strong", { text: "Contact them about: " }), p.why || p.with])
-        ]));
+        var has = p.name || p.email || p.phone;
+        var card = el("article", { class: "card" + (has ? "" : " is-blank") });
+        card.appendChild(el("div", { class: "avatar", "aria-hidden": "true", text: p.name ? window.SiteUtil.initials(p.name) : "?" }));
+        card.appendChild(el("h4", { text: p.name || p.role }));
+        if (p.name && p.role) card.appendChild(el("p", { class: "tag", text: p.role }));
+        if (p.bio) card.appendChild(el("p", { text: p.bio }));
+        if (p.why || p.with) card.appendChild(el("p", {}, [el("strong", { text: "Contact them about: " }), p.why || p.with]));
+        if (p.email && STRICT_EMAIL.test(p.email)) card.appendChild(el("p", {}, [el("strong", { text: "Email: " }), el("a", { href: "mailto:" + p.email, text: p.email })]));
+        if (p.phone) card.appendChild(el("p", {}, [el("strong", { text: "Phone: " }), p.phone]));
+        if (!has) card.appendChild(el("p", { class: "muted", text: "Contact details to be added" }));
+        g.appendChild(card);
       });
       keyHost.appendChild(g);
     }

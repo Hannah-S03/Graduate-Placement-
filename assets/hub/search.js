@@ -37,11 +37,10 @@
     (L.catalogue || []).forEach(function (c) { add("Learning", c.title, [c.description, c.type, c.skill], c.description || c.type, "learning.html"); });
     var links = Hub && Hub.allLinks ? Hub.allLinks() : ((window.SITE_LINKS || {}).items || []);
     links.forEach(function (l) { add("Quick links", l.name, [l.description, l.category], l.description || l.category, "links.html"); });
-    (window.SITE_TEAM || []).forEach(function (p) { add("People and networks", p.name, [p.role, p.bio, p.why], p.role || "", "company.html#team"); });
-    var N = window.SITE_NETWORKS || {};
-    (N.internal || []).concat(N.external || []).forEach(function (n) { add("People and networks", n.name, [n.text], n.text, "company.html#groups"); });
+    (window.SITE_TEAM || []).forEach(function (p) { if (p.name) add("People and networks", p.name, [p.role, p.bio, p.why], p.role || "", "company.html#network"); });
+    ((window.SITE_RESOURCES || {}).items || []).forEach(function (r) { if (r && r.title) add("Key information", r.title, [r.description], r.description || "", "company.html#resources"); });
     var C = window.SITE_COMPANY || {};
-    [["Our mission", C.mission], ["About the company", C.about], ["Size and locations", C.size], ["Culture", C.culture], ["Why join us", C.whyJoin], ["Our values", (C.values || []).join(", ")]].forEach(function (x) {
+    [["Portfolios", C.portfolios ? C.name + " works across " + C.portfolios + " portfolios" : ""], ["Our mission", C.mission], ["About the company", C.about], ["Size and locations", C.size], ["Culture", C.culture], ["Why join us", C.whyJoin], ["Our values", (C.values || []).join(", ")]].forEach(function (x) {
       if (x[1]) add("Company and help", x[0], [x[1]], x[1], "company.html#about");
     });
     var K = window.SITE_CONTENT || {};

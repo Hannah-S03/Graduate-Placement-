@@ -1,9 +1,9 @@
-// DUMMY DATA: placement details for the "My placement" section. Replace with the real programme.
+// Placement details for the "My placement" section (programme details: check before launch).
 window.SITE_PLACEMENT = {
   atAGlance: [
     { label: "Length", value: "12 weeks" },
     { label: "Where you work", value: "The central team, across a range of areas" },
-    { label: "Working pattern", value: "Hybrid, about 3 days a week in the office" },
+    { label: "Working pattern", value: "Remote" },
     { label: "Your support", value: "A manager, a mentor and the programme lead" }
   ],
   keyMoments: [

@@ -2,7 +2,7 @@
 
 A personalised digital hub that supports graduates throughout their scheme. It brings company information, placement details, development goals, learning, professional networks and progress tracking together in one place.
 
-Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learning and wording are dummy data** (the site is branded as Vesta Software Group, but every fact about the company, the people and the quotes is invented) until you replace them.
+Full requirements are in [`PRD.md`](PRD.md). The mock-up company text, people, stories and networks have been removed from the Company hub: it shows the name Vesta Software Group, that the company has 3 portfolios, a **Key information** area (buttons to folders you add later), your graduate programme details, and key contacts with blank details for you to fill in. The learning catalogue, skills overview and programme wording are the draft programme details: check them before launch.
 
 ## What graduates can do
 
@@ -13,7 +13,7 @@ Full requirements are in [`PRD.md`](PRD.md). **All company, people, links, learn
 | **My development** | Record milestones and rate skills at the start and now, with a **skills chart** (radar or bars, with a table version) |
 | **Quick links** | Pin company systems and resources, and add your own |
 | **Learning** | Required training with reminders (and calendar files), saved courses and opportunities |
-| **Company hub** | Company information, the central team, placement details, key contacts and your own network |
+| **Company hub** | About the company (name and 3 portfolios), **Key information** (buttons to folders of material), your placement and the scheme objectives and skills, key contacts and your own network |
 | **Meetings** | **1:1 meeting notes** (agenda, notes and actions, which can be turned into goal tasks, plus the next meeting date in your calendar) and a **feedback log** (who said what, what you will do about it, linked to a goal, and savable to your achievements). Meeting notes are private to the browser and are left out of the scheme record |
 | **Reflection** | A note on what you learnt each week |
 | **Achievements** | A portfolio of projects and accomplishments, with a printable and downloadable scheme record |
@@ -83,13 +83,16 @@ Only you can see the site while it runs this way. To share it with a cohort, upl
 
 The links in `src/data/links.js` are built into the site for every graduate: each shows on **Quick links** with an **Open** button, marked "Company link". Graduates can pin them but cannot edit or delete them (they can only delete links they added themselves). "Key tools" is the group shown first, for the systems everyone uses most. To add another later, copy a line in that file, give it a new unique `id`, paste the address between the quote marks and save. Use plain web addresses, never a password. Most of these are sign-in pages, so each person uses their own login; setting up single sign-on is a Vesta IT job. Note: while each graduate has their own copy of the files they could change that copy, so the links are only truly fixed once the hub is hosted at one shared address (a later step with IT).
 
-## Replacing the dummy content
+## Adding your real details
 
 0. **Programme dates:** set `programmeStart` and `programmeEnd` in `src/config.js` (format `2026-09-01`). They drive the progress bar at the top of My profile and prefill each graduate's dates. The bar shows the current week out of the total weeks, so week 6 of 12 is 50%.
-1. Edit the files in `src/data/` (plain text inside quotes; keep the commas and brackets). In `links.js`, put real web addresses in `url`. In `learning.js`, set the real required training and `dueDays` (days after the start date).
-2. Edit `src/config.js`: company name, contact email, placement length.
-3. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
-4. Set `usingDummyData: false` in `src/config.js` once everything is real. This removes the sample-content banner.
+1. **Company text** (`src/data/company.js`): fill in any of `tagline`, `about`, `mission`, `values`, `size`, `culture`, `whyJoin`, and `portfolioNames` (the three portfolios). Empty ones are not shown.
+2. **Key information buttons** (`src/data/resources.js`): paste the folder address into each `url` (plain web addresses, never a password). Until you do, the button shows "Link to be added". Copy, rename or delete cards freely.
+3. **Key contacts** (`src/data/team.js`): fill in `name`, `email` and `phone` for each role card; blank ones show "Contact details to be added".
+4. **Contact email** (`src/config.js`): set `contactEmail` (and optionally `programmeTeamEmail`). The Help page shows "Contact details will be added here" until it is set.
+5. **Quick links** (`src/data/links.js`) and **training** (`src/data/learning.js`: required training and `dueDays`): add real web addresses and items.
+6. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
+7. `usingDummyData` in `src/config.js` is `false`, so there is no sample-content banner. Set it to `true` only if you want the yellow banner back.
 
 ## Changing the text size and spacing
 
@@ -113,8 +116,8 @@ All colours are in the `:root` block at the top of `assets/site.css`. Change a v
 
 ## Before going public
 
-- [ ] All dummy data replaced and `usingDummyData` set to `false`
-- [ ] Written permission for every named person, photo and quote
+- [ ] Company text, key contacts, the contact email and the Key information folder links filled in
+- [ ] Written permission for every named person or photo you add
 - [ ] Required training, links and contacts checked
 - [ ] Privacy notice and accessibility statement reviewed
 - [ ] Checked on a phone and with the keyboard only

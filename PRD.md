@@ -6,7 +6,7 @@
 | **Owner** | Hannah Sullivan |
 | **Last updated** | 2026-10-08 |
 
-> **About the dummy data.** The company text (Vesta Software Group is the real company name; every fact written about it, its size, locations and culture), people, quotes, links, learning, networks and wording are **invented sample content** so the layout can be reviewed. Replace all of it before launch. A banner on every page says so while `usingDummyData` is `true` in `src/config.js`.
+> **About the content.** The mock-up company text, people, quotes and networks have been removed from the Company hub. It shows the company name (Vesta Software Group), that it has 3 portfolios, a Key information area with buttons to folders (addresses to be added), the graduate programme details, and key contacts with blank details. The learning catalogue, skills overview and programme wording are draft programme details to be checked before launch. Contact details are blank until added in `src/config.js`, `src/data/team.js` and `src/data/resources.js`.
 
 Items marked **[ASSUMPTION]** are unconfirmed. Open questions are in section 15.
 

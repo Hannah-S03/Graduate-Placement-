@@ -1,4 +1,4 @@
-// Scheme objectives and graduate FAQs. DUMMY wording where noted; review before launch.
+// Scheme objectives and graduate FAQs (programme details: check the wording is accurate before launch).
 window.SITE_CONTENT = {
   programmeObjectives: [
     "Give graduates exposure to a range of areas within the central team so they can find what interests them most.",
@@ -21,7 +21,6 @@ window.SITE_CONTENT = {
     { q: "Can the programme team see my progress?", a: "Only if you choose to send it. On My profile, \u201CShare with the programme team\u201D lets you download a small summary file, see exactly what is in it, and send it yourself. Nothing is sent automatically. You choose whether to include your goal titles, weekly progress updates, weekly goals and weekly reflections, and your 1:1 notes, feedback log, contacts and career interests are never included." },
     { q: "Can the programme team set goals for me?", a: "They can send you a goals file. On My journey, open \u201CGoals from the programme team\u201D and choose the file: you see exactly what it would add or change, and nothing happens until you confirm. Your own tasks, progress and comments are never overwritten." },
     { q: "How do training reminders work?", a: "Each required training item has a due date worked out from your placement start date. The hub shows due soon and overdue reminders on My profile and Learning. To get a reminder in your own calendar, use Add to calendar to download a calendar file." },
-    { q: "Who do I ask if something is wrong or missing?", a: "Contact the programme team using the details below. (Dummy answer: replace with the real contact route.)" },
-    { q: "Is the content here real?", a: "While you see the yellow sample-content banner, the company, people and resources shown are invented placeholders." }
+    { q: "Who do I ask if something is wrong or missing?", a: "Contact the programme team using the details on the Help page." }
   ]
 };
