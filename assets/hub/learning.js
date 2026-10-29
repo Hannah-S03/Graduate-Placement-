@@ -22,6 +22,10 @@
       var tr = LRN.training;
       var done = tr.filter(function (x) { return Hub.trainingStatus(x) === "complete"; }).length;
       trainHost.appendChild(el("h2", { text: "Required training" }));
+      if (!tr.length) {
+        trainHost.appendChild(el("p", { class: "notice training-note", role: "note" }, [el("strong", { text: "Required: " }), LRN.trainingNote || "All training modules complete, or equivalent."]));
+        return;
+      }
       trainHost.appendChild(el("p", { text: done + " of " + tr.length + " complete. Due dates are worked out from your placement start date." }));
       trainHost.appendChild(Hub.progress(tr.length ? (done / tr.length) * 100 : 0, "Required training complete"));
       var hasStart = !!S.state.profile.startDate;

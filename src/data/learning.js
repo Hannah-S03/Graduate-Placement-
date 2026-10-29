@@ -2,13 +2,11 @@
 // "dueDays" = the training is due that many days after the graduate's placement start date.
 // "skill" matches a skill from src/data/overview.js (its name in lower case with dashes).
 window.SITE_LEARNING = {
-  training: [
-    { id: "t-health-safety", title: "Health and safety", description: "Keeping yourself and others safe at work.", dueDays: 7 },
-    { id: "t-security", title: "Information security", description: "Passwords, phishing and protecting company information.", dueDays: 14 },
-    { id: "t-data-protection", title: "Data protection", description: "How we handle personal data responsibly.", dueDays: 14 },
-    { id: "t-code-of-conduct", title: "Code of conduct", description: "The standards we expect from everyone.", dueDays: 21 },
-    { id: "t-equality", title: "Equality, diversity and inclusion", description: "Building an inclusive workplace.", dueDays: 30 }
-  ],
+  // Required training. Empty for now: the note below is shown instead. To add items later, put one per line, for example:
+  // { id: "t-example", title: "Module name", description: "What it covers.", dueDays: 14 },
+  // (dueDays = how many days after a graduate's start date it is due.) Items get due dates, reminders and a progress bar.
+  training: [],
+  trainingNote: "All training modules complete, or equivalent.",
   types: ["Course", "Workshop", "Shadowing", "Event", "Mentoring", "Stretch project"],
   // Courses and development opportunities shown on the Learning page. Empty for now: add your own, one per line.
   // For example (remove the // to use it):

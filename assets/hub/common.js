@@ -346,7 +346,7 @@
     var trPct = tr.length ? (trDone / tr.length) * 100 : null;
     parts.push({ key: "goals", label: "Goals", pct: goalsPct, detail: st.goals.length ? Hub.plural(st.goals.length, "goal", "goals") + ", average progress" : "Nothing added yet", href: "journey.html" });
     parts.push({ key: "milestones", label: "Milestones", pct: msPct, detail: st.milestones.length ? achieved + " of " + st.milestones.length + " achieved" : "Nothing added yet", href: "development.html" });
-    parts.push({ key: "training", label: "Required training", pct: trPct, detail: tr.length ? trDone + " of " + tr.length + " complete" : "Nothing added yet", href: "learning.html" });
+    parts.push({ key: "training", label: "Required training", pct: trPct, detail: tr.length ? trDone + " of " + tr.length + " complete" : ((window.SITE_LEARNING || {}).trainingNote || "Nothing added yet"), href: "learning.html" });
     var have = parts.filter(function (p) { return p.pct !== null; });
     var overall = have.length ? Math.round(have.reduce(function (a, p) { return a + p.pct; }, 0) / have.length) : null;
     return { parts: parts, overall: overall };

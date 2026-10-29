@@ -92,7 +92,7 @@ The links in `src/data/links.js` are built into the site for every graduate: eac
 2. **Key information buttons** (`src/data/resources.js`): paste the folder address into each `url` (plain web addresses, never a password). Until you do, the button shows "Link to be added". Copy, rename or delete cards freely.
 3. **Key contacts** (`src/data/team.js`): fill in `name`, `email` and `phone` for each role card; blank ones show "Contact details to be added".
 4. **Contact email** (`src/config.js`): set `contactEmail` (and optionally `programmeTeamEmail`). The Help page shows "Contact details will be added here" until it is set.
-5. **Quick links** (`src/data/links.js`) and **training** (`src/data/learning.js`: required training and `dueDays`): add real web addresses and items. The **learning catalogue** in the same file is empty: add courses and opportunities one per line (there is an example in the file).
+5. **Quick links** (`src/data/links.js`) and **training** (`src/data/learning.js`: required training and `dueDays`): add real web addresses and items. The **required training** list is empty: the Learning page shows the note "All training modules complete, or equivalent." (change `trainingNote`, or add items with a due date, reminders and a progress bar, using the example in the file). The **learning catalogue** in the same file is empty: add courses and opportunities one per line (there is an example in the file).
 6. Review `privacy.html` and `accessibility.html` (draft wording) with whoever handles data protection.
 7. `usingDummyData` in `src/config.js` is `false`, so there is no sample-content banner. Set it to `true` only if you want the yellow banner back.
 
